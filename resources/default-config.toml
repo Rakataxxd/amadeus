@@ -1,0 +1,69 @@
+version = 1
+
+[general]
+default_shell = "powershell"
+default_profile = "default"
+start_layout = ""
+
+[canvas]
+snap_enabled = true
+snap_threshold = 15
+snap_to_grid = false
+grid_size = 20
+
+[shells.powershell]
+command = "pwsh.exe"
+args = []
+profile = "default"
+elevated = false
+env = {}
+
+[shells.cmd]
+command = "cmd.exe"
+args = []
+profile = "default"
+elevated = false
+env = {}
+
+[profiles.default]
+font = "Cascadia Code"
+font_size = 14
+opacity = 0.9
+blur = 10
+text_color = "#c8c8d8"
+text_glow = ""
+border_color = "#444444"
+border_width = 1
+border_radius = 8
+titlebar_color = "#444444"
+cursor_style = "block"
+cursor_color = "#ffffff"
+ligatures = true
+box_shadow = ""
+css_animation = ""
+custom_css = ""
+
+[profiles.default.background]
+color = "#1a1a2e"
+image = ""
+image_opacity = 0.2
+image_blur = 0
+image_size = "contain"
+image_position = "center center"
+image_draggable = false
+
+[profiles.default.overlay]
+image = ""
+opacity = 0.05
+
+[keybindings]
+new_terminal = "ctrl+shift+n"
+close_terminal = "ctrl+shift+w"
+next_terminal = "ctrl+tab"
+prev_terminal = "ctrl+shift+tab"
+save_layout = "ctrl+shift+s"
+load_layout = "ctrl+shift+l"
+fullscreen = "f11"
+reload_config = "ctrl+shift+r"
+copy = "ctrl+shift+c"
+paste = "ctrl+shift+v"

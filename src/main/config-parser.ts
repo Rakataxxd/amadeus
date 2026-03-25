@@ -204,13 +204,16 @@ export class ConfigManager {
 
     // If user config doesn't exist, seed from the bundled default-config.toml
     if (!fs.existsSync(this._configPath)) {
-      // Compiled output is at dist/main/main/config-parser.js
-      // Resources are at ../../../resources/default-config.toml relative to that
-      const defaultTomlPath = path.resolve(
-        __dirname,
-        '../../../resources/default-config.toml'
-      );
-      if (fs.existsSync(defaultTomlPath)) {
+      // In the packaged app, extraResources places default-config.toml at
+      // process.resourcesPath/default-config.toml.
+      // In dev, the file is at ../../../resources/default-config.toml relative
+      // to the compiled dist/main/main/config-parser.js output.
+      const candidates = [
+        path.join(process.resourcesPath ?? '', 'default-config.toml'),
+        path.resolve(__dirname, '../../../resources/default-config.toml'),
+      ];
+      const defaultTomlPath = candidates.find(p => fs.existsSync(p));
+      if (defaultTomlPath) {
         fs.copyFileSync(defaultTomlPath, this._configPath);
       } else {
         // Fallback: no default config file found, just use in-memory defaults

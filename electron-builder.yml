@@ -8,8 +8,16 @@ directories:
 
 files:
   - dist/**/*
-  - node_modules/**/*
   - package.json
+  - node_modules/@iarna/toml/**/*
+  - node_modules/node-pty/**/*
+
+extraResources:
+  - from: resources/default-config.toml
+    to: default-config.toml
+
+asarUnpack:
+  - node_modules/node-pty/**/*
 
 win:
   target:

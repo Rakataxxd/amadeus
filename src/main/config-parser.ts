@@ -207,7 +207,7 @@ export class ConfigManager {
       // Compiled output is at dist/main/main/config-parser.js
       // Resources are at ../../resources/default-config.toml relative to that
       const defaultTomlPath = path.resolve(
-        path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')),
+        __dirname,
         '../../resources/default-config.toml'
       );
       if (fs.existsSync(defaultTomlPath)) {

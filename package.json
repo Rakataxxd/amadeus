@@ -1,0 +1,35 @@
+{
+  "name": "amadeus",
+  "version": "1.0.0",
+  "description": "Amadeus terminal emulator",
+  "main": "dist/main/main/index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "start": "npm run build && electron .",
+    "dev": "concurrently \"tsc -b --watch\" \"electron .\"",
+    "test": "npx tsx --test",
+    "dist": "npm run build && electron-builder"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@iarna/toml": "^2.2.5",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/addon-webgl": "^0.19.0",
+    "@xterm/xterm": "^6.0.0",
+    "electron": "^41.0.3",
+    "node-pty": "^1.1.0",
+    "xterm": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "concurrently": "^9.2.1",
+    "electron-builder": "^26.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}

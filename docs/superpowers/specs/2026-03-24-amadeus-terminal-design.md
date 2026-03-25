@@ -42,9 +42,29 @@ Two Electron processes connected via IPC:
 **Preload:**
 - `preload.ts` — secure contextBridge API exposing IPC to renderer
 
+## Security Model
+
+- `nodeIntegration: false` and `contextIsolation: true` on the BrowserWindow.
+- The preload script exposes a strict whitelist API via `contextBridge.exposeInMainWorld`:
+  - `amadeus.terminal.create(shellId: string, elevated: boolean)` — only accepts registered shell IDs, not arbitrary commands
+  - `amadeus.terminal.write(terminalId: string, data: string)` — sends input to a specific PTY
+  - `amadeus.terminal.resize(terminalId: string, cols: number, rows: number)` — resizes a PTY
+  - `amadeus.terminal.close(terminalId: string)` — kills a PTY
+  - `amadeus.config.get()` — returns the current parsed config (read-only)
+  - `amadeus.config.onUpdate(callback)` — subscribes to config changes
+  - `amadeus.layout.save(name: string, layout: LayoutData)` — saves a layout
+  - `amadeus.layout.load(name: string)` — loads a layout
+  - `amadeus.shell.list()` — returns available shells
+  - `amadeus.terminal.onData(terminalId, callback)` — subscribes to PTY output for a terminal
+  - `amadeus.terminal.onCreated(callback)` — notified when a PTY is spawned
+  - `amadeus.terminal.onExited(terminalId, callback)` — notified when a PTY exits
+  - `amadeus.onError(callback)` — subscribes to error events from main process
+- The renderer cannot execute arbitrary shell commands; it can only reference shell IDs defined in the config.
+- `custom_css` is scoped to the terminal container element via a shadow DOM or scoped style tag. CSS `url()` values are restricted to local `file://` paths under `~/.amadeus/`.
+
 ## Layout System — Free Canvas + Smart Snap
 
-Each terminal is an independently positioned widget on an infinite canvas:
+Each terminal is an independently positioned widget on a bounded canvas that matches the app window dimensions:
 
 - **Drag**: grab the title bar to move. Snap-to-edge and snap-to-other-terminals activate within a configurable pixel threshold (default 15px). Hold Shift to disable snap temporarily.
 - **Resize**: grab any edge or corner. Minimum size 200x100px. Snap also applies during resize.
@@ -81,18 +101,28 @@ elevated = false
 
 The shell registry auto-detects common shells (PowerShell, CMD, Git Bash, WSL distros) on first run to populate defaults.
 
-When creating a new terminal, the user can override the default shell and elevated setting.
+When creating a new terminal (Ctrl+Shift+N), a small dropdown menu appears at the center of the canvas listing all configured shells with their profile names. Each entry shows the shell name and a shield icon if `elevated = true`. The user clicks a shell to spawn it, or presses Escape to cancel. The new terminal appears at the center of the visible canvas area with the default size (40% width, 40% height).
 
 ### Elevated Terminals
 
-When `elevated = true`, Amadeus spawns the shell process with admin privileges. On Windows, this requires the app itself to request elevation or use a helper process. The title bar shows a visual indicator (shield icon) for elevated terminals.
+Amadeus runs as a normal (non-elevated) process. For elevated terminals, it uses a helper process architecture:
+
+1. A small `amadeus-elevate.exe` helper binary is included in the distribution.
+2. When spawning an elevated terminal, the main process launches the helper via `ShellExecuteEx` with `runas` verb, which triggers the Windows UAC prompt.
+3. The helper creates the PTY (via node-pty logic compiled into it) and communicates with the main Amadeus process over a named pipe (`\\.\pipe\amadeus-pty-{id}`).
+4. stdin/stdout/resize events are bridged over the named pipe, transparent to the renderer.
+5. The title bar shows a shield icon (🛡) for elevated terminals.
+
+The named pipe is created by the helper with a restricted DACL that only allows the launching user's SID to connect. Additionally, a random nonce is passed as a command-line argument to the helper and must be sent as the first message on the pipe to authenticate the connection.
+
+This approach avoids running the entire Electron app as admin, which would break drag-and-drop and violate least-privilege principles.
 
 ## Customization System
 
 Six layers of visual customization per terminal, all configured via TOML profiles:
 
 ### Layer 1: Background
-- Solid color, gradient, or image (PNG/JPG/GIF)
+- Solid color, gradient, or image (PNG/JPG/GIF — animated GIFs display only the first frame to avoid performance issues with blur/overlay compositing)
 - Image properties: opacity, blur, position, size (contain/cover/auto/fixed px)
 - `image_draggable = true` enables Alt+Click+Drag to reposition the image within the terminal
 - Alt+Scroll to resize the background image
@@ -164,7 +194,12 @@ custom_css = """
 
 Created automatically with sensible defaults on first launch. The config parser validates the file and falls back to defaults for invalid values.
 
-**Hot-reload:** chokidar watches the config file. Changes are parsed, validated, and pushed to the renderer via IPC. Visual changes apply immediately without restarting terminals.
+**Hot-reload:** `fs.watch` monitors the config file (single file, no need for chokidar). Changes are parsed, validated, and pushed to the renderer via IPC.
+
+Hot-reload scope:
+- **Immediate (no restart):** `[profiles.*]` (all visual properties), `[canvas]` (snap settings), `[keybindings]`
+- **New terminals only:** `[shells.*]` changes to `command`, `args`, `env` — already-running terminals keep their current shell process
+- **App restart required:** none — all config is hot-reloadable at the appropriate level
 
 ### Config Sections
 
@@ -174,6 +209,31 @@ Created automatically with sensible defaults on first launch. The config parser 
 - `[profiles.*]` — visual profiles with all 6 customization layers
 - `[keybindings]` — keyboard shortcut mappings
 - `[layouts.*]` — named layouts with terminal positions/sizes/shells
+
+### Layout Format Example
+
+```toml
+[layouts.main-workspace]
+
+[[layouts.main-workspace.terminals]]
+shell = "powershell"
+x = 0        # percentage of window width
+y = 0        # percentage of window height
+width = 55   # percentage
+height = 60  # percentage
+z = 0        # z-index order
+bg_offset_x = 120  # background image drag offset (px)
+bg_offset_y = 40
+bg_scale = 1.0      # background image scale
+
+[[layouts.main-workspace.terminals]]
+shell = "gitbash"
+x = 56
+y = 0
+width = 44
+height = 40
+z = 1
+```
 
 ## Keyboard Shortcuts (Defaults)
 
@@ -190,6 +250,57 @@ Created automatically with sensible defaults on first launch. The config parser 
 
 All shortcuts are remappable in `[keybindings]`.
 
+## IPC Channel Contract
+
+| Channel | Direction | Payload | Purpose |
+|---|---|---|---|
+| `pty:create` | renderer → main | `{ shellId, elevated }` | Spawn a new shell process |
+| `pty:created` | main → renderer | `{ terminalId, shellId, pid }` | Confirm shell spawned |
+| `pty:data` | main → renderer | `{ terminalId, data: string }` | Shell stdout/stderr output |
+| `pty:write` | renderer → main | `{ terminalId, data: string }` | User keyboard input to shell |
+| `pty:resize` | renderer → main | `{ terminalId, cols, rows }` | Terminal resized |
+| `pty:close` | renderer → main | `{ terminalId }` | Kill shell process |
+| `pty:exited` | main → renderer | `{ terminalId, exitCode }` | Shell process exited |
+| `config:updated` | main → renderer | `{ config: ParsedConfig }` | Config file changed on disk |
+| `config:get` | renderer → main | `{}` | Request current config |
+| `config:current` | main → renderer | `{ config: ParsedConfig }` | Current config response |
+| `layout:save` | renderer → main | `{ name, terminals: LayoutTerminal[] }` | Save layout to disk |
+| `layout:load` | renderer → main | `{ name }` | Load a saved layout |
+| `layout:data` | main → renderer | `{ name, terminals: LayoutTerminal[] }` | Layout data response |
+| `shell:list` | renderer → main | `{}` | Request available shells |
+| `shell:available` | main → renderer | `{ shells: ShellInfo[] }` | Available shells response |
+| `error` | main → renderer | `{ source: string, terminalId?: string, message: string }` | Error notification (spawn failure, config error, etc.) |
+
+## Copy/Paste
+
+- **Ctrl+Shift+C** — copy selected text from active terminal
+- **Ctrl+Shift+V** — paste clipboard into active terminal
+- **Right-click** — context menu with Copy/Paste (Windows convention)
+- These defaults avoid conflict with Ctrl+C (SIGINT) in shells
+- Remappable in `[keybindings]`
+
+## Path Resolution
+
+All paths in the TOML config support:
+- `~` — expanded to `os.homedir()` (typically `C:\Users\<name>`)
+- `%ENV_VAR%` — expanded from `process.env`
+- Relative paths — resolved relative to `~/.amadeus/`
+- Forward slashes are normalized to the OS separator
+
+## Terminal Limits
+
+xterm.js with the WebGL addon is limited to ~16 active WebGL contexts per Electron renderer process. When the limit is reached, new terminals automatically fall back to the canvas-based renderer (slightly lower performance but functionally identical). The user is not interrupted.
+
+## Config Versioning
+
+The config file includes a `version` field:
+
+```toml
+version = 1
+```
+
+On startup, the config parser checks the version. If the file uses an older schema, it is automatically migrated (renamed keys, added defaults for new fields). Unknown keys are ignored and preserved. A backup of the pre-migration file is saved as `config.toml.bak`.
+
 ## Data Flow
 
 1. **Config → Visuals:** config.toml → config-parser → IPC → theme-engine → terminal containers
@@ -204,8 +315,8 @@ All shortcuts are remappable in `[keybindings]`.
 | xterm + xterm-addon-webgl | Terminal rendering (GPU-accelerated) |
 | node-pty | Native PTY for spawning real shells |
 | @iarna/toml | TOML parser |
-| chokidar | File watcher for config hot-reload |
 | electron-builder | Build and packaging for Windows |
+| pkg | Compiles elevate-helper.ts into standalone amadeus-elevate.exe |
 
 ## Project Structure
 
@@ -221,7 +332,11 @@ amadeus/
 │   │   ├── config-parser.ts
 │   │   ├── shell-registry.ts
 │   │   ├── layout-store.ts
-│   │   └── ipc-handlers.ts
+│   │   ├── ipc-handlers.ts
+│   │   └── elevate/
+│   │       ├── elevate-helper.ts       # source for amadeus-elevate.exe
+│   │       ├── pipe-bridge.ts          # named pipe communication
+│   │       └── build-helper.js         # script to compile helper to .exe (pkg)
 │   ├── renderer/
 │   │   ├── index.html
 │   │   ├── index.ts
@@ -258,7 +373,7 @@ amadeus/
 - Invalid TOML config: log the error, keep previous valid config, show a notification in the title bar
 - Shell spawn failure: show error message in the terminal container instead of crashing
 - Missing background image: silently fall back to solid color background
-- node-pty crash: attempt to respawn the shell, show error if it fails repeatedly
+- node-pty crash: attempt to respawn up to 3 times within 10 seconds with 1-second backoff. After 3 failures, show a persistent error message in the terminal container with a manual "Retry" button
 
 ## Success Criteria
 

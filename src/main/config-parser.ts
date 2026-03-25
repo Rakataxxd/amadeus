@@ -117,7 +117,26 @@ function deepMerge<T>(target: T, source: Partial<T>): T {
 export function parseConfig(tomlString: string): AmadeusConfig {
   const parsed = TOML.parse(tomlString) as Partial<AmadeusConfig>;
   const defaults = getDefaultConfig();
-  return deepMerge(defaults, parsed);
+  const config = deepMerge(defaults, parsed);
+  resolveImagePaths(config);
+  return config;
+}
+
+function resolveImagePaths(config: AmadeusConfig): void {
+  const home = os.homedir();
+  const resolve = (p: string): string => {
+    if (!p) return p;
+    let resolved = p;
+    if (resolved.startsWith('~')) resolved = path.join(home, resolved.slice(1));
+    // Convert to file:// URL for CSP compatibility in renderer
+    resolved = resolved.replace(/\\/g, '/');
+    if (!resolved.startsWith('file:///')) resolved = 'file:///' + resolved;
+    return resolved;
+  };
+  for (const profile of Object.values(config.profiles)) {
+    if (profile.background?.image) profile.background.image = resolve(profile.background.image);
+    if (profile.overlay?.image) profile.overlay.image = resolve(profile.overlay.image);
+  }
 }
 
 // ── Validate ──────────────────────────────────────────────────────────────────

@@ -236,6 +236,17 @@ export class CanvasManager {
     }
   }
 
+  getActiveContainer(): TerminalContainer | null {
+    return this.activeContainer;
+  }
+
+  getActiveProfile(): any {
+    if (!this.activeContainer || !this.config) return null;
+    const shellId = this.activeContainer.shellId;
+    const profileName = this.config.shells[shellId]?.profile || this.config.general.default_profile;
+    return this.config.profiles[profileName] || null;
+  }
+
   copyFromActive(): void {
     this.activeContainer?.copySelection();
   }

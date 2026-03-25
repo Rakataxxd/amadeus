@@ -46,8 +46,9 @@ export class TerminalContainer {
     this.bgLayer = document.createElement('div');
     this.bgLayer.className = 'bg-layer';
 
-    this.bgImageEl = document.createElement('div');
+    this.bgImageEl = document.createElement('img');
     this.bgImageEl.className = 'bg-image';
+    (this.bgImageEl as HTMLImageElement).alt = '';
     this.bgLayer.appendChild(this.bgImageEl);
 
     this.overlayLayer = document.createElement('div');
@@ -56,9 +57,10 @@ export class TerminalContainer {
     this.xtermLayer = document.createElement('div');
     this.xtermLayer.className = 'xterm-layer';
 
+    // xterm goes first (bottom), then bg image and overlay on top with pointer-events: none
+    this.body.appendChild(this.xtermLayer);
     this.body.appendChild(this.bgLayer);
     this.body.appendChild(this.overlayLayer);
-    this.body.appendChild(this.xtermLayer);
     this.element.appendChild(this.body);
 
     // Resize handles
@@ -157,19 +159,21 @@ export class TerminalContainer {
       this.titlebar.setColor(profile.titlebar_color);
     }
 
-    // Background layer color
-    this.bgLayer.style.backgroundColor = profile.background?.color || 'transparent';
+    // Background color goes on the body (behind xterm), NOT on bgLayer (which is on top)
+    this.body.style.backgroundColor = profile.background?.color || '#1a1a2e';
+    this.bgLayer.style.backgroundColor = 'transparent';
 
-    // Background image
+    // Background image — rendered as <img> on top of xterm with pointer-events:none
     const bg = profile.background;
     if (bg?.image) {
-      this.bgImageEl.style.backgroundImage = `url("${bg.image}")`;
-      this.bgImageEl.style.backgroundSize = bg.image_size || 'cover';
-      this.bgImageEl.style.backgroundPosition = bg.image_position || 'center';
-      this.bgImageEl.style.opacity = String(bg.image_opacity ?? 1);
+      (this.bgImageEl as HTMLImageElement).src = bg.image;
+      this.bgImageEl.style.objectFit = bg.image_size === 'contain' ? 'contain' : bg.image_size === 'cover' ? 'cover' : 'contain';
+      this.bgImageEl.style.objectPosition = bg.image_position || 'center';
+      this.bgImageEl.style.opacity = String(bg.image_opacity ?? 0.3);
       this.bgImageEl.style.filter = bg.image_blur ? `blur(${bg.image_blur}px)` : '';
     } else {
-      this.bgImageEl.style.backgroundImage = '';
+      (this.bgImageEl as HTMLImageElement).src = '';
+      this.bgImageEl.style.display = 'none';
     }
 
     // Overlay

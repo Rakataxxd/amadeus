@@ -1,36 +1,119 @@
-import * as pty from 'node-pty';
-import * as os from 'os';
+import { fork, ChildProcess } from 'child_process';
+import * as path from 'path';
 import { ShellConfig } from '../shared/types.js';
 
+// Uses a child Node.js process to run node-pty, avoiding Electron ABI mismatch
 export class PtyManager {
-  private ptys = new Map<string, { id: string; shellId: string; process: pty.IPty; elevated: boolean }>();
+  private worker: ChildProcess | null = null;
+  private terminals = new Map<string, { shellId: string; pid?: number }>();
   private nextId = 1;
+  private ready = false;
+  private pendingCreates: Array<() => void> = [];
 
   onData: (terminalId: string, data: string) => void = () => {};
   onExit: (terminalId: string, exitCode: number) => void = () => {};
   onError: (terminalId: string, message: string) => void = () => {};
+  onCreated: (terminalId: string, shellId: string, pid: number) => void = () => {};
 
-  create(shellId: string, shellConfig: ShellConfig, elevated: boolean): string | null {
-    const terminalId = `term-${this.nextId++}`;
-    if (elevated) console.warn(`Elevated terminals not yet implemented, spawning ${shellId} normally`);
-    try {
-      const env = { ...process.env, ...shellConfig.env } as Record<string, string>;
-      const proc = pty.spawn(shellConfig.command, shellConfig.args, {
-        name: 'xterm-256color', cols: 80, rows: 24, cwd: os.homedir(), env,
-      });
-      this.ptys.set(terminalId, { id: terminalId, shellId, process: proc, elevated });
-      proc.onData((data) => this.onData(terminalId, data));
-      proc.onExit(({ exitCode }) => { this.ptys.delete(terminalId); this.onExit(terminalId, exitCode); });
-      return terminalId;
-    } catch (err: any) {
-      this.onError(terminalId, `Failed to spawn ${shellId}: ${err.message}`);
-      return null;
-    }
+  start(): void {
+    // Fork the worker using system Node (not Electron's node)
+    // The compiled worker will be at dist/main/main/pty-worker.js
+    const workerPath = path.join(__dirname, 'pty-worker.js');
+
+    // Use execPath to find the system node. In Electron, process.execPath is electron.
+    // We need the system node. Try common paths.
+    let nodePath = 'node'; // fallback to PATH
+
+    this.worker = fork(workerPath, [], {
+      execPath: nodePath,
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
+      silent: true,
+    });
+
+    this.worker.on('message', (msg: any) => {
+      switch (msg.type) {
+        case 'ready':
+          this.ready = true;
+          // Process any pending creates
+          for (const fn of this.pendingCreates) fn();
+          this.pendingCreates = [];
+          break;
+        case 'created':
+          this.terminals.set(msg.id, {
+            ...this.terminals.get(msg.id)!,
+            pid: msg.pid,
+          });
+          this.onCreated(msg.id, this.terminals.get(msg.id)!.shellId, msg.pid);
+          break;
+        case 'data':
+          this.onData(msg.id, msg.data);
+          break;
+        case 'exit':
+          this.terminals.delete(msg.id);
+          this.onExit(msg.id, msg.exitCode);
+          break;
+        case 'error':
+          this.onError(msg.id, msg.message);
+          break;
+      }
+    });
+
+    this.worker.on('error', (err) => {
+      console.error('PTY worker error:', err);
+    });
+
+    this.worker.stderr?.on('data', (data: Buffer) => {
+      console.error('PTY worker stderr:', data.toString());
+    });
   }
 
-  write(terminalId: string, data: string): void { this.ptys.get(terminalId)?.process.write(data); }
-  resize(terminalId: string, cols: number, rows: number): void { try { this.ptys.get(terminalId)?.process.resize(cols, rows); } catch {} }
-  close(terminalId: string): void { const m = this.ptys.get(terminalId); if (m) { m.process.kill(); this.ptys.delete(terminalId); } }
-  getPid(terminalId: string): number | undefined { return this.ptys.get(terminalId)?.process.pid; }
-  closeAll(): void { for (const [id] of this.ptys) this.close(id); }
+  create(shellId: string, shellConfig: ShellConfig, elevated: boolean): string {
+    const terminalId = `term-${this.nextId++}`;
+    if (elevated) console.warn(`Elevated terminals not yet implemented, spawning ${shellId} normally`);
+
+    this.terminals.set(terminalId, { shellId });
+
+    const doCreate = () => {
+      this.worker?.send({
+        type: 'create',
+        id: terminalId,
+        command: shellConfig.command,
+        args: shellConfig.args,
+        env: shellConfig.env || {},
+      });
+    };
+
+    if (this.ready) {
+      doCreate();
+    } else {
+      this.pendingCreates.push(doCreate);
+    }
+
+    return terminalId;
+  }
+
+  write(terminalId: string, data: string): void {
+    this.worker?.send({ type: 'write', id: terminalId, data });
+  }
+
+  resize(terminalId: string, cols: number, rows: number): void {
+    this.worker?.send({ type: 'resize', id: terminalId, cols, rows });
+  }
+
+  close(terminalId: string): void {
+    this.worker?.send({ type: 'close', id: terminalId });
+    this.terminals.delete(terminalId);
+  }
+
+  getPid(terminalId: string): number | undefined {
+    return this.terminals.get(terminalId)?.pid;
+  }
+
+  closeAll(): void {
+    for (const [id] of this.terminals) {
+      this.close(id);
+    }
+    this.worker?.kill();
+    this.worker = null;
+  }
 }

@@ -12,20 +12,22 @@ export function registerIpcHandlers(
   const send = (channel: string, data: any) => getWindow()?.webContents.send(channel, data);
 
   ipcMain.on(IPC.PTY_CREATE, (_e, { shellId, elevated }) => {
+    console.log('[IPC] PTY_CREATE received:', shellId, elevated);
     const config = configManager.current;
     const shellConfig = config.shells[shellId];
-    if (!shellConfig) { send(IPC.ERROR, { source: 'pty', message: `Unknown shell: ${shellId}` }); return; }
-    const terminalId = ptyManager.create(shellId, shellConfig, elevated);
-    if (terminalId) send(IPC.PTY_CREATED, { terminalId, shellId, pid: ptyManager.getPid(terminalId) });
+    if (!shellConfig) { console.log('[IPC] Unknown shell:', shellId); send(IPC.ERROR, { source: 'pty', message: `Unknown shell: ${shellId}` }); return; }
+    console.log('[IPC] Creating PTY for:', shellConfig.command);
+    ptyManager.create(shellId, shellConfig, elevated);
   });
 
   ipcMain.on(IPC.PTY_WRITE, (_e, { terminalId, data }) => ptyManager.write(terminalId, data));
   ipcMain.on(IPC.PTY_RESIZE, (_e, { terminalId, cols, rows }) => ptyManager.resize(terminalId, cols, rows));
   ipcMain.on(IPC.PTY_CLOSE, (_e, { terminalId }) => ptyManager.close(terminalId));
 
+  ptyManager.onCreated = (terminalId, shellId, pid) => { console.log('[IPC] PTY created:', terminalId, shellId, pid); send(IPC.PTY_CREATED, { terminalId, shellId, pid }); };
   ptyManager.onData = (terminalId, data) => send(IPC.PTY_DATA, { terminalId, data });
-  ptyManager.onExit = (terminalId, exitCode) => send(IPC.PTY_EXITED, { terminalId, exitCode });
-  ptyManager.onError = (terminalId, message) => send(IPC.ERROR, { source: 'pty', terminalId, message });
+  ptyManager.onExit = (terminalId, exitCode) => { console.log('[IPC] PTY exited:', terminalId, exitCode); send(IPC.PTY_EXITED, { terminalId, exitCode }); };
+  ptyManager.onError = (terminalId, message) => { console.error('[IPC] PTY error:', terminalId, message); send(IPC.ERROR, { source: 'pty', terminalId, message }); };
 
   ipcMain.on(IPC.CONFIG_GET, () => send(IPC.CONFIG_CURRENT, { config: configManager.current }));
   configManager.onUpdate((config) => send(IPC.CONFIG_UPDATED, { config }));

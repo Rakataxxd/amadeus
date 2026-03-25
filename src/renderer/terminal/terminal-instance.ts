@@ -8,7 +8,7 @@ let activeWebGLContexts = 0;
 const MAX_WEBGL_CONTEXTS = 16;
 
 export class TerminalInstance {
-  private terminal: Terminal;
+  readonly terminal: Terminal;
   private fitAddon: FitAddon;
   private webglAddon: WebglAddon | null = null;
   private terminalId: string | null = null;
@@ -37,7 +37,8 @@ export class TerminalInstance {
     this.terminal.loadAddon(this.fitAddon);
     this.terminal.open(container);
 
-    this.tryWebGL();
+    // Do NOT load WebGL by default — it doesn't support transparent backgrounds.
+    // We use the canvas renderer which does support allowTransparency.
   }
 
   private tryWebGL(): void {

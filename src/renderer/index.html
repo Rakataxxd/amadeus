@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file:; font-src 'self'; script-src 'self' 'unsafe-inline'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' file: data: blob: *; font-src 'self' *; script-src 'self' 'unsafe-inline'">
   <title>Amadeus</title>
   <link rel="stylesheet" href="vendor/xterm.css">
   <link rel="stylesheet" href="styles.css">
@@ -18,6 +18,18 @@
   </script>
 </head>
 <body>
+  <div id="toolbar">
+    <div id="toolbar-title">Amadeus</div>
+    <div id="toolbar-actions">
+      <button id="btn-new-terminal" title="Nueva terminal (Ctrl+Shift+N)">+</button>
+      <button id="btn-settings" title="Personalizar terminal activa">&#9881;</button>
+    </div>
+    <div id="toolbar-window-controls">
+      <button class="win-btn" id="btn-minimize">─</button>
+      <button class="win-btn" id="btn-maximize">□</button>
+      <button class="win-btn win-close" id="btn-close">✕</button>
+    </div>
+  </div>
   <div id="canvas"></div>
   <div id="shell-picker" class="hidden"></div>
   <script type="module" src="index.js"></script>

@@ -46,4 +46,12 @@ contextBridge.exposeInMainWorld('amadeus', {
     onAvailable: (callback: (shells: any[]) => void) => ipcRenderer.on(IPC.SHELL_AVAILABLE, (_e, { shells }) => callback(shells)),
   },
   onError: (callback: (error: any) => void) => ipcRenderer.on(IPC.ERROR, (_e, error) => callback(error)),
+  dialog: {
+    pickImage: (): Promise<string> => ipcRenderer.invoke('dialog:pickImage'),
+  },
+  window: {
+    minimize: () => ipcRenderer.send('window:minimize'),
+    toggleMaximize: () => ipcRenderer.send('window:toggleMaximize'),
+    close: () => ipcRenderer.send('window:close'),
+  },
 });

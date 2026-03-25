@@ -1,5 +1,25 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { IPC } from '../shared/ipc-channels.js';
+
+// IPC channel constants inlined to avoid sandbox require restrictions.
+// Keep in sync with src/shared/ipc-channels.ts.
+const IPC = {
+  PTY_CREATE: 'pty:create',
+  PTY_CREATED: 'pty:created',
+  PTY_DATA: 'pty:data',
+  PTY_WRITE: 'pty:write',
+  PTY_RESIZE: 'pty:resize',
+  PTY_CLOSE: 'pty:close',
+  PTY_EXITED: 'pty:exited',
+  CONFIG_UPDATED: 'config:updated',
+  CONFIG_GET: 'config:get',
+  CONFIG_CURRENT: 'config:current',
+  LAYOUT_SAVE: 'layout:save',
+  LAYOUT_LOAD: 'layout:load',
+  LAYOUT_DATA: 'layout:data',
+  SHELL_LIST: 'shell:list',
+  SHELL_AVAILABLE: 'shell:available',
+  ERROR: 'error',
+} as const;
 
 contextBridge.exposeInMainWorld('amadeus', {
   terminal: {

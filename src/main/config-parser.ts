@@ -205,25 +205,25 @@ export class ConfigManager {
     // If user config doesn't exist, seed from the bundled default-config.toml
     if (!fs.existsSync(this._configPath)) {
       // Compiled output is at dist/main/main/config-parser.js
-      // Resources are at ../../resources/default-config.toml relative to that
+      // Resources are at ../../../resources/default-config.toml relative to that
       const defaultTomlPath = path.resolve(
         __dirname,
-        '../../resources/default-config.toml'
+        '../../../resources/default-config.toml'
       );
       if (fs.existsSync(defaultTomlPath)) {
         fs.copyFileSync(defaultTomlPath, this._configPath);
       } else {
-        // Fallback: write hardcoded defaults as TOML
-        const defaultContent = fs.readFileSync(
-          path.resolve(path.dirname(process.argv[1] ?? ''), '../../resources/default-config.toml'),
-          'utf-8'
-        );
-        fs.writeFileSync(this._configPath, defaultContent, 'utf-8');
+        // Fallback: no default config file found, just use in-memory defaults
+        // (the getDefaultConfig() values are already loaded)
+        console.warn('Amadeus: default-config.toml not found, using in-memory defaults');
       }
     }
 
-    const raw = fs.readFileSync(this._configPath, 'utf-8');
-    this._current = parseConfig(raw);
+    if (fs.existsSync(this._configPath)) {
+      const raw = fs.readFileSync(this._configPath, 'utf-8');
+      this._current = parseConfig(raw);
+    }
+    // else: _current remains getDefaultConfig()
   }
 
   watch(): void {

@@ -22,7 +22,7 @@ function createWindow(): void {
     },
   });
   registerIpcHandlers(ptyManager, configManager, layoutStore, () => mainWindow);
-  mainWindow.loadFile(path.join(__dirname, '../renderer/index.html'));
+  mainWindow.loadFile(path.join(__dirname, '../../renderer/renderer/index.html'));
   mainWindow.on('closed', () => { mainWindow = null; ptyManager.closeAll(); configManager.stopWatching(); });
 }
 

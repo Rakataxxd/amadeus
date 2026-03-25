@@ -7,7 +7,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "build": "tsc -b",
+    "copy-assets": "node -e \"const fs=require('fs'),p=require('path');const d=p.join('dist','renderer','renderer');fs.mkdirSync(d,{recursive:true});fs.copyFileSync(p.join('src','renderer','index.html'),p.join(d,'index.html'));fs.copyFileSync(p.join('src','renderer','styles.css'),p.join(d,'styles.css'));\"",
+    "build": "tsc -b && npm run copy-assets",
     "start": "npm run build && electron .",
     "dev": "concurrently \"tsc -b --watch\" \"electron .\"",
     "test": "npx tsx --test",

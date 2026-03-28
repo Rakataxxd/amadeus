@@ -69,7 +69,7 @@ export function compileShaderProgram(
     const headerLines = UNIFORM_HEADER.split('\n').length;
     const adjusted = fragResult.replace(
       /ERROR: (\d+):(\d+):/g,
-      (_m, col, line) => `ERROR: ${col}:${Math.max(1, parseInt(line) - headerLines)}:`,
+      (_m, shaderIndex, line) => `ERROR: ${shaderIndex}:${Math.max(1, parseInt(line) - headerLines)}:`,
     );
     return { program: null, error: adjusted };
   }
@@ -105,10 +105,11 @@ void main() {
 }
 `;
   const result = compileShaderProgram(gl, passThrough);
+  if (!result.program) console.error('[shader-compiler] compilePassThrough failed:', result.error);
   return result.program;
 }
 
-// Compiles a background pass-through — renders u_image blended over a solid color.
+// Compiles a background pass-through — renders u_image as-is.
 export function compileBackgroundPassThrough(gl: WebGL2RenderingContext): WebGLProgram | null {
   const bg = `
 void main() {
@@ -117,5 +118,6 @@ void main() {
 }
 `;
   const result = compileShaderProgram(gl, bg);
+  if (!result.program) console.error('[shader-compiler] compileBackgroundPassThrough failed:', result.error);
   return result.program;
 }

@@ -29,11 +29,6 @@ export interface ShellConfig {
   env: Record<string, string>;
 }
 
-export interface ShaderConfig {
-  enabled: boolean;
-  fragment: string;
-}
-
 export interface ProfileConfig {
   font: string;
   font_size: number;
@@ -53,8 +48,6 @@ export interface ProfileConfig {
   box_shadow: string;
   css_animation: string;
   custom_css: string;
-  background_shader?: ShaderConfig;
-  post_shader?: ShaderConfig;
 }
 
 export interface BackgroundConfig {

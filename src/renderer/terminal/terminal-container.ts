@@ -1,7 +1,6 @@
 import { TerminalTitlebar } from './terminal-titlebar.js';
 import { TerminalInstance } from './terminal-instance.js';
 import type { ProfileConfig } from '../../shared/types.js';
-import { ShaderCompositor } from '../theme/shader-compositor.js';
 
 export class TerminalContainer {
   readonly element: HTMLElement;
@@ -22,7 +21,6 @@ export class TerminalContainer {
   private overlayLayer: HTMLElement;
   private xtermLayer: HTMLElement;
   private termInstance: TerminalInstance | null = null;
-  private compositor: ShaderCompositor | null = null;
 
   constructor(shellId: string, shellName: string, profileName: string, elevated: boolean) {
     this.shellId = shellId;
@@ -138,13 +136,6 @@ export class TerminalContainer {
 
   initTerminal(): TerminalInstance {
     this.termInstance = new TerminalInstance(this.xtermLayer);
-
-    if (this.compositor) {
-      this.compositor.startRenderLoop(() =>
-        this.xtermLayer.querySelector('canvas') as HTMLCanvasElement | null,
-      );
-    }
-
     return this.termInstance;
   }
 
@@ -153,63 +144,26 @@ export class TerminalContainer {
   }
 
   applyProfile(profile: ProfileConfig): void {
-    // Border and frame — always applied regardless of shader mode
+    // Border
     this.element.style.borderColor = profile.border_color || 'rgba(255,255,255,0.12)';
     this.element.style.borderWidth = `${profile.border_width ?? 1}px`;
     this.element.style.borderRadius = `${profile.border_radius ?? 8}px`;
-    if (profile.box_shadow) this.element.style.boxShadow = profile.box_shadow;
-    if (profile.titlebar_color) this.titlebar.setColor(profile.titlebar_color);
-    if (profile.css_animation) this.element.style.animation = profile.css_animation;
 
-    const shadersActive =
-      (profile.background_shader?.enabled && !!profile.background_shader.fragment) ||
-      (profile.post_shader?.enabled && !!profile.post_shader.fragment);
-
-    if (shadersActive) {
-      // ── Shader path ──────────────────────────────────────────────────────
-      if (!this.compositor) {
-        try {
-          this.compositor = new ShaderCompositor(this.body);
-        } catch {
-          // WebGL2 unavailable — fall through to DOM path
-        }
-      }
-
-      if (this.compositor) {
-        this.bgLayer.style.display = 'none';
-        this.overlayLayer.style.backgroundImage = '';
-        this.body.style.backgroundColor = profile.background?.color || '#1a1a2e';
-
-        this.compositor.setShaders(profile);
-        this.compositor.setImages(
-          profile.background?.image || '',
-          profile.overlay?.image || '',
-        );
-
-        this.xtermLayer.style.opacity = '0';
-
-        if (this.termInstance) {
-          this.compositor.startRenderLoop(() =>
-            this.xtermLayer.querySelector('canvas') as HTMLCanvasElement | null,
-          );
-        }
-
-        this.termInstance?.applyProfile(profile);
-        return;
-      }
+    // Box shadow
+    if (profile.box_shadow) {
+      this.element.style.boxShadow = profile.box_shadow;
     }
 
-    // ── DOM path (no shaders or WebGL2 unavailable) ───────────────────────
-    if (this.compositor) {
-      this.compositor.dispose();
-      this.compositor = null;
-      this.xtermLayer.style.opacity = '';
-      this.bgLayer.style.display = '';
+    // Titlebar color
+    if (profile.titlebar_color) {
+      this.titlebar.setColor(profile.titlebar_color);
     }
 
+    // Background color goes on the body (behind xterm), NOT on bgLayer (which is on top)
     this.body.style.backgroundColor = profile.background?.color || '#1a1a2e';
     this.bgLayer.style.backgroundColor = 'transparent';
 
+    // Background image — rendered as <img> on top of xterm with pointer-events:none
     const bg = profile.background;
     if (bg?.image) {
       (this.bgImageEl as HTMLImageElement).src = bg.image;
@@ -217,12 +171,12 @@ export class TerminalContainer {
       this.bgImageEl.style.objectPosition = bg.image_position || 'center';
       this.bgImageEl.style.opacity = String(bg.image_opacity ?? 0.3);
       this.bgImageEl.style.filter = bg.image_blur ? `blur(${bg.image_blur}px)` : '';
-      this.bgImageEl.style.display = '';
     } else {
       (this.bgImageEl as HTMLImageElement).src = '';
       this.bgImageEl.style.display = 'none';
     }
 
+    // Overlay
     const ov = profile.overlay;
     if (ov?.image) {
       this.overlayLayer.style.backgroundImage = `url("${ov.image}")`;
@@ -231,6 +185,12 @@ export class TerminalContainer {
       this.overlayLayer.style.backgroundImage = '';
     }
 
+    // Custom CSS animation
+    if (profile.css_animation) {
+      this.element.style.animation = profile.css_animation;
+    }
+
+    // Apply profile to terminal instance
     this.termInstance?.applyProfile(profile);
   }
 
@@ -293,8 +253,6 @@ export class TerminalContainer {
   }
 
   dispose(): void {
-    this.compositor?.dispose();
-    this.compositor = null;
     this.termInstance?.dispose();
     if (this.element.parentElement) {
       this.element.parentElement.removeChild(this.element);

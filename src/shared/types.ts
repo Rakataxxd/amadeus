@@ -96,6 +96,8 @@ export interface TerminalVisualSettings {
   borderWidth?: number;
   borderRadius?: number;
   titlebarColor?: string;
+  titlebarOpacity?: number;
+  statusBarColor?: string;
   cursorStyle?: string;
   cursorColor?: string;
   boxShadow?: string;
@@ -106,6 +108,8 @@ export interface TerminalVisualSettings {
   overlayOpacity?: number;
   particles?: string;
   particleColor?: string;
+  particleOpacity?: number;
+  particleSpeed?: number;
   customCSS?: string;
 }
 
@@ -120,6 +124,7 @@ export interface LayoutTerminal {
   bg_offset_y: number;
   bg_scale: number;
   cwd?: string;
+  customName?: string;
   visual?: TerminalVisualSettings;
 }
 

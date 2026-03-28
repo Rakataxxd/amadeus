@@ -24,8 +24,12 @@ export interface SettingsChange {
   overlayImage?: string;
   overlayOpacity?: number;
   customCSS?: string;
+  titlebarOpacity?: number;
+  statusBarColor?: string;
   particles?: string;
   particleColor?: string;
+  particleOpacity?: number;
+  particleSpeed?: number;
 }
 
 // Each preset entry: [settings, accent-color for the dot preview]
@@ -257,17 +261,20 @@ export class SettingsPanel {
 
         <!-- THEME PRESETS -->
         <div class="sp-section">
-          <div class="sp-label">
-            <span class="sp-label-icon">🎨</span>
-            Theme Presets
+          <div class="sp-label sp-label-collapsible" data-collapse="sec-themes">
+            <svg class="sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            Color Themes
+            <span class="sp-collapse-arrow">+</span>
           </div>
-          <div class="sp-presets">
+          <div class="sp-collapsible collapsed" id="sec-themes">
+          <div class="sp-anime-grid">
             ${Object.entries(THEME_PRESETS).map(([name, [_, dot]]) => `
-              <button class="sp-preset" data-theme="${name}">
-                <span class="sp-preset-dot" style="background:${dot}"></span>
-                ${name}
+              <button class="sp-anime-btn" data-theme="${name}">
+                <span class="sp-anime-dot" style="background:${dot}"></span>
+                <span class="sp-anime-name">${name}</span>
               </button>
             `).join('')}
+          </div>
           </div>
         </div>
 
@@ -276,16 +283,16 @@ export class SettingsPanel {
         <!-- ANIME THEMES -->
         <div class="sp-section">
           <div class="sp-label sp-label-collapsible" data-collapse="anime-themes">
-            <span class="sp-label-icon">🌸</span>
+            <svg class="sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6 2 12s4.48 10 10 10 10-4 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="10" r="1" fill="currentColor"/><circle cx="15" cy="10" r="1" fill="currentColor"/></svg>
             Anime Themes
-            <span class="sp-collapse-arrow">▾</span>
+            <span class="sp-collapse-arrow">+</span>
           </div>
-          <div class="sp-collapsible" id="anime-themes">
-            <div class="sp-presets sp-presets-anime">
+          <div class="sp-collapsible collapsed" id="anime-themes">
+            <div class="sp-anime-grid">
               ${Object.entries(ANIME_THEME_PRESETS).map(([name, entry]) => `
-                <button class="sp-preset sp-preset-anime" data-anime-theme="${name}">
-                  <span class="sp-preset-dot" style="background:${entry.accent}"></span>
-                  ${name}
+                <button class="sp-anime-btn" data-anime-theme="${name}">
+                  <span class="sp-anime-dot" style="background:${entry.accent}"></span>
+                  <span class="sp-anime-name">${name}</span>
                 </button>
               `).join('')}
             </div>
@@ -297,11 +304,11 @@ export class SettingsPanel {
         <!-- MY THEMES (custom) -->
         <div class="sp-section">
           <div class="sp-label sp-label-collapsible" data-collapse="custom-themes">
-            <span class="sp-label-icon">💾</span>
+            <svg class="sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
             My Themes
-            <span class="sp-collapse-arrow">▾</span>
+            <span class="sp-collapse-arrow">+</span>
           </div>
-          <div class="sp-collapsible" id="custom-themes">
+          <div class="sp-collapsible collapsed" id="custom-themes">
             <div class="sp-presets sp-presets-custom" id="custom-themes-list">
               ${Object.entries(this.customThemes).map(([name, entry]) => `
                 <div class="sp-custom-theme-row">
@@ -324,10 +331,12 @@ export class SettingsPanel {
 
         <!-- BACKGROUND -->
         <div class="sp-section">
-          <div class="sp-label">
-            <span class="sp-label-icon">🖼</span>
+          <div class="sp-label sp-label-collapsible" data-collapse="sec-background">
+            <svg class="sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
             Background
+            <span class="sp-collapse-arrow">+</span>
           </div>
+          <div class="sp-collapsible collapsed" id="sec-background">
           <button class="sp-btn sp-pick-bg">Choose background image...</button>
           <div class="sp-row">
             <label>Color</label>
@@ -358,25 +367,10 @@ export class SettingsPanel {
               <option value="center bottom">Bottom center</option>
             </select>
           </div>
-        </div>
-
-        <div class="sp-divider"></div>
-
-        <!-- OVERLAY -->
-        <div class="sp-section">
-          <div class="sp-label">
-            <span class="sp-label-icon">✨</span>
-            Overlay &amp; Effects
-          </div>
-          <button class="sp-btn sp-pick-overlay">Choose overlay (transparent PNG)...</button>
-          <div class="sp-row">
-            <label>Overlay opacity</label>
-            <input type="range" class="sp-range" min="0" max="100" data-key="overlayOpacity" value="${Math.round((p.overlay?.opacity ?? 0.05) * 100)}">
-            <span class="sp-val">${Math.round((p.overlay?.opacity ?? 0.05) * 100)}%</span>
-          </div>
           <div class="sp-row">
             <label>Scanlines</label>
             <input type="checkbox" data-key="scanlines" class="sp-check">
+          </div>
           </div>
         </div>
 
@@ -384,27 +378,53 @@ export class SettingsPanel {
 
         <!-- PARTICLES -->
         <div class="sp-section">
-          <div class="sp-label">
-            <span class="sp-label-icon">✦</span>
+          <div class="sp-label sp-label-collapsible" data-collapse="sec-particles">
+            <svg class="sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"/><circle cx="6" cy="6" r="1.5"/><circle cx="18" cy="8" r="1"/><circle cx="8" cy="18" r="1"/><circle cx="17" cy="17" r="1.5"/><circle cx="4" cy="12" r="1"/><circle cx="20" cy="14" r="1"/></svg>
             Particles
+            <span class="sp-collapse-arrow">+</span>
+          </div>
+          <div class="sp-collapsible collapsed" id="sec-particles">
+          <div class="sp-particle-grid">
+            ${[
+              ['none','None','<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>'],
+              ['snow','Snow','<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="8" y1="1" x2="8" y2="15"/><line x1="1" y1="8" x2="15" y2="8"/><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>'],
+              ['fireflies','Fireflies','<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="4" cy="6" r="1.5" opacity=".8"/><circle cx="11" cy="4" r="1" opacity=".5"/><circle cx="8" cy="10" r="1.8" opacity=".9"/><circle cx="13" cy="11" r="1" opacity=".6"/></svg>'],
+              ['matrix','Matrix','<svg viewBox="0 0 16 16" fill="currentColor" font-size="10" font-family="monospace"><text x="2" y="8">0</text><text x="8" y="13">1</text><text x="5" y="4" opacity=".5">1</text></svg>'],
+              ['starfield','Stars','<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="8,1 9.5,6 15,6.5 10.5,10 12,15 8,12 4,15 5.5,10 1,6.5 6.5,6" opacity=".8"/></svg>'],
+              ['sakura','Sakura','<svg viewBox="0 0 16 16" fill="currentColor" opacity=".8"><ellipse cx="8" cy="6" rx="3" ry="5" transform="rotate(-30 8 8)"/><ellipse cx="8" cy="6" rx="3" ry="5" transform="rotate(30 8 8)" opacity=".6"/></svg>'],
+              ['embers','Embers','<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 14c-3 0-4-3-4-5 0-3 4-7 4-7s4 4 4 7c0 2-1 5-4 5z"/><path d="M8 14c-1.5 0-2-1.5-2-2.5 0-1.5 2-3.5 2-3.5s2 2 2 3.5c0 1-0.5 2.5-2 2.5z"/></svg>'],
+              ['bubbles','Bubbles','<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1"><circle cx="6" cy="9" r="4"/><circle cx="12" cy="5" r="2.5"/><circle cx="10" cy="13" r="1.5"/></svg>'],
+              ['rain','Rain','<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="4" y1="2" x2="3" y2="7"/><line x1="8" y1="4" x2="7" y2="9"/><line x1="12" y1="1" x2="11" y2="6"/><line x1="6" y1="9" x2="5" y2="14"/><line x1="10" y1="8" x2="9" y2="13"/></svg>'],
+              ['lightning','Lightning','<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="9,1 5,9 8,9 7,15 12,7 9,7"/></svg>'],
+              ['smoke','Smoke','<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 12c0-2 2-2 2-4s-1-3 1-5"/><path d="M8 13c0-2 2-2 2-4s-1-3 1-5"/><path d="M12 12c0-2 2-2 2-4"/></svg>'],
+              ['confetti','Confetti','<svg viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="3" width="3" height="2" rx=".5" transform="rotate(20 3 4)" opacity=".8"/><rect x="9" y="2" width="3" height="2" rx=".5" transform="rotate(-15 10 3)" opacity=".7"/><rect x="5" y="9" width="3" height="2" rx=".5" transform="rotate(40 6 10)" opacity=".9"/><rect x="11" y="10" width="3" height="2" rx=".5" transform="rotate(-25 12 11)" opacity=".6"/></svg>'],
+              ['stardust','Stardust','<svg viewBox="0 0 16 16" fill="currentColor"><polygon points="8,2 9,6 13,6 10,9 11,13 8,10 5,13 6,9 3,6 7,6" opacity=".7"/><circle cx="3" cy="3" r="1" opacity=".4"/><circle cx="13" cy="12" r="1" opacity=".4"/></svg>'],
+              ['hearts','Hearts','<svg viewBox="0 0 16 16" fill="currentColor" opacity=".8"><path d="M8 14s-5.5-4-5.5-7.5C2.5 4 4.5 3 6 3c1 0 1.5.5 2 1.5C8.5 3.5 9 3 10 3c1.5 0 3.5 1 3.5 3.5C13.5 10 8 14 8 14z"/></svg>'],
+              ['leaves','Leaves','<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M3 13C3 7 8 2 13 2c0 5-5 10-10 11z" fill="currentColor" opacity=".3"/><path d="M3 13C6 10 9 6 13 2"/><path d="M6 11c1-2 3-4 5-5"/></svg>'],
+              ['ash','Ash','<svg viewBox="0 0 16 16" fill="currentColor" opacity=".5"><rect x="3" y="5" width="2" height="1.5" rx=".5" transform="rotate(10 4 5)"/><rect x="8" y="3" width="2.5" height="1.5" rx=".5" transform="rotate(-15 9 3)"/><rect x="6" y="9" width="2" height="1.5" rx=".5" transform="rotate(25 7 9)"/><rect x="11" y="8" width="2" height="1.5" rx=".5"/><rect x="4" y="12" width="2.5" height="1.5" rx=".5" transform="rotate(-10 5 12)"/></svg>'],
+              ['binary','Binary','<svg viewBox="0 0 16 16" fill="currentColor" font-size="7" font-family="monospace"><text x="1" y="6">01</text><text x="6" y="12">10</text></svg>'],
+              ['galaxy','Galaxy','<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1"><path d="M8 4c3 0 5 2 4 4s-3 4-6 3"/><path d="M8 12c-3 0-5-2-4-4s3-4 6-3"/><circle cx="8" cy="8" r="1.5" fill="currentColor" opacity=".6"/></svg>'],
+            ].map(([val, label, svg]) => `
+              <button class="sp-particle-btn" data-particle="${val}">
+                <span class="sp-particle-icon">${svg}</span>
+                <span>${label}</span>
+              </button>
+            `).join('')}
           </div>
           <div class="sp-row">
-            <label>Animation</label>
-            <select class="sp-select" data-key="particles">
-              <option value="none">None</option>
-              <option value="snow">Snow</option>
-              <option value="fireflies">Fireflies</option>
-              <option value="matrix">Matrix</option>
-              <option value="starfield">Starfield</option>
-              <option value="sakura">Sakura</option>
-              <option value="embers">Embers</option>
-              <option value="bubbles">Bubbles</option>
-              <option value="rain">Rain</option>
-            </select>
-          </div>
-          <div class="sp-row">
-            <label>Particle color</label>
+            <label>Color</label>
             <input type="color" data-key="particleColor" value="#ffffff">
+          </div>
+          <div class="sp-row">
+            <label>Opacity</label>
+            <input type="range" class="sp-range" min="5" max="100" data-key="particleOpacity" value="100">
+            <span class="sp-val">100%</span>
+          </div>
+          <div class="sp-row">
+            <label>Speed</label>
+            <input type="range" class="sp-range" min="10" max="300" data-key="particleSpeed" value="100">
+            <span class="sp-val">100%</span>
+          </div>
           </div>
         </div>
 
@@ -412,10 +432,12 @@ export class SettingsPanel {
 
         <!-- WINDOW -->
         <div class="sp-section">
-          <div class="sp-label">
-            <span class="sp-label-icon">🪟</span>
+          <div class="sp-label sp-label-collapsible" data-collapse="sec-window">
+            <svg class="sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20"/><circle cx="6" cy="6" r="1" fill="currentColor"/><circle cx="10" cy="6" r="1" fill="currentColor"/></svg>
             Window
+            <span class="sp-collapse-arrow">+</span>
           </div>
+          <div class="sp-collapsible collapsed" id="sec-window">
           <div class="sp-row">
             <label>Opacity</label>
             <input type="range" class="sp-range" min="10" max="100" data-key="opacity" value="${Math.round((p.opacity ?? 0.9) * 100)}">
@@ -442,7 +464,16 @@ export class SettingsPanel {
           </div>
           <div class="sp-row">
             <label>Titlebar color</label>
-            <input type="color" data-key="titlebarColor" value="${p.titlebar_color || '#444444'}">
+            <input type="color" data-key="titlebarColor" value="${p.titlebar_color || '#000000'}">
+          </div>
+          <div class="sp-row">
+            <label>Titlebar opacity</label>
+            <input type="range" class="sp-range" min="0" max="100" data-key="titlebarOpacity" value="100">
+            <span class="sp-val">100%</span>
+          </div>
+          <div class="sp-row">
+            <label>Status bar color</label>
+            <input type="color" data-key="statusBarColor" value="#30e060">
           </div>
           <div class="sp-row">
             <label>Shadow</label>
@@ -462,16 +493,19 @@ export class SettingsPanel {
             <input type="range" class="sp-range" min="0" max="20" data-key="padding" value="0">
             <span class="sp-val">0px</span>
           </div>
+          </div>
         </div>
 
         <div class="sp-divider"></div>
 
         <!-- TEXT -->
         <div class="sp-section">
-          <div class="sp-label">
-            <span class="sp-label-icon">Aa</span>
+          <div class="sp-label sp-label-collapsible" data-collapse="sec-text">
+            <svg class="sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
             Text &amp; Font
+            <span class="sp-collapse-arrow">+</span>
           </div>
+          <div class="sp-collapsible collapsed" id="sec-text">
           <div class="sp-row">
             <label>Text color</label>
             <input type="color" data-key="textColor" value="${p.text_color || '#c8c8d8'}">
@@ -516,21 +550,25 @@ export class SettingsPanel {
               <option value="0 0 15px rgba(255,110,199,0.6)">Neon Pink</option>
             </select>
           </div>
+          </div>
         </div>
 
         <div class="sp-divider"></div>
 
         <!-- CUSTOM CSS -->
         <div class="sp-section">
-          <div class="sp-label">
-            <span class="sp-label-icon">&lt;/&gt;</span>
+          <div class="sp-label sp-label-collapsible" data-collapse="sec-css">
+            <svg class="sp-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             Custom CSS
+            <span class="sp-collapse-arrow">+</span>
           </div>
+          <div class="sp-collapsible collapsed" id="sec-css">
           <textarea class="sp-textarea" data-key="customCSS" placeholder="/* CSS applied directly to the terminal */
 .terminal-body {
   /* your styles here */
 }">${p.custom_css || ''}</textarea>
           <button class="sp-btn sp-apply-css">Apply CSS</button>
+          </div>
         </div>
 
         <!-- RESET -->
@@ -548,7 +586,7 @@ export class SettingsPanel {
     this.panel.querySelector('.sp-close')!.addEventListener('click', () => this.hide());
 
     // Theme presets (general)
-    this.panel.querySelectorAll('.sp-preset:not(.sp-preset-anime)').forEach(btn => {
+    this.panel.querySelectorAll('.sp-anime-btn[data-theme]').forEach(btn => {
       btn.addEventListener('click', () => {
         const name = (btn as HTMLElement).dataset['theme']!;
         const entry = THEME_PRESETS[name];
@@ -564,7 +602,7 @@ export class SettingsPanel {
     });
 
     // Anime theme presets
-    this.panel.querySelectorAll('.sp-preset-anime').forEach(btn => {
+    this.panel.querySelectorAll('.sp-anime-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const name = (btn as HTMLElement).dataset['animeTheme']!;
         const entry = ANIME_THEME_PRESETS[name];
@@ -594,7 +632,7 @@ export class SettingsPanel {
         if (target) {
           target.classList.toggle('collapsed');
           const arrow = label.querySelector('.sp-collapse-arrow') as HTMLElement;
-          if (arrow) arrow.textContent = target.classList.contains('collapsed') ? '▸' : '▾';
+          if (arrow) arrow.textContent = target.classList.contains('collapsed') ? '+' : '−';
         }
       });
     });
@@ -606,13 +644,10 @@ export class SettingsPanel {
         const entry = this.customThemes[name];
         if (entry) {
           const preset = { ...entry.settings };
-          if (entry.imagePath) preset.bgImage = entry.imagePath;
+          if (entry.imagePath && !preset.bgImage) preset.bgImage = entry.imagePath;
           this.onChange(preset);
           this.lastApplied = preset;
-          if (preset.bgColor) this.updateInput('bgColor', preset.bgColor);
-          if (preset.textColor) this.updateInput('textColor', preset.textColor);
-          if (preset.borderColor) this.updateInput('borderColor', preset.borderColor);
-          if (preset.titlebarColor) this.updateInput('titlebarColor', preset.titlebarColor);
+          this.refreshFromVisual(preset as any);
         }
       });
     });
@@ -679,13 +714,35 @@ export class SettingsPanel {
       const scanlines = this.panel.querySelector('[data-key="scanlines"]') as HTMLInputElement;
       if (scanlines) settings.scanlines = scanlines.checked;
 
+      // Particles
+      const activeParticle = this.panel.querySelector('.sp-particle-btn.active') as HTMLElement;
+      if (activeParticle) settings.particles = activeParticle.dataset['particle'] || 'none';
+      const particleColor = this.getInputValue('particleColor');
+      if (particleColor) settings.particleColor = particleColor;
+      const particleOpacity = this.getRangeValue('particleOpacity');
+      if (particleOpacity !== null) settings.particleOpacity = particleOpacity / 100;
+      const particleSpeed = this.getRangeValue('particleSpeed');
+      if (particleSpeed !== null) settings.particleSpeed = particleSpeed / 100;
+
+      // Titlebar opacity
+      const titlebarOpacity = this.getRangeValue('titlebarOpacity');
+      if (titlebarOpacity !== null) settings.titlebarOpacity = titlebarOpacity / 100;
+
+      // Grab background image from the active container's visual settings
+      if (this.onGetCurrentState) {
+        const currentState = this.onGetCurrentState();
+        if (currentState.bgImage) settings.bgImage = currentState.bgImage;
+        if (currentState.overlayImage) settings.overlayImage = currentState.overlayImage;
+      } else if (this.lastImagePath) {
+        settings.bgImage = this.lastImagePath;
+      }
+
       // Use accent from border or text color
       const accent = borderColor || textColor || '#6b5ce7';
 
       this.customThemes[name] = {
         settings,
         accent,
-        imagePath: this.lastImagePath || undefined,
       };
       await this.saveCustomThemes();
       input.value = '';
@@ -714,7 +771,7 @@ export class SettingsPanel {
         const val = parseInt(el.value);
         const span = el.nextElementSibling as HTMLElement;
 
-        if (key === 'opacity' || key === 'bgOpacity' || key === 'overlayOpacity') {
+        if (key === 'opacity' || key === 'bgOpacity' || key === 'overlayOpacity' || key === 'particleOpacity' || key === 'particleSpeed' || key === 'titlebarOpacity') {
           if (span) span.textContent = `${val}%`;
           this.emitChange(key, val / 100);
         } else if (key === 'blur' || key === 'borderWidth' || key === 'borderRadius' || key === 'padding') {
@@ -732,6 +789,17 @@ export class SettingsPanel {
       select.addEventListener('change', (e) => {
         const el = e.target as HTMLSelectElement;
         this.emitChange(el.dataset['key']!, el.value);
+      });
+    });
+
+    // Particle grid buttons
+    this.panel.querySelectorAll('.sp-particle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const val = (btn as HTMLElement).dataset['particle']!;
+        this.emitChange('particles', val);
+        // Update active state
+        this.panel.querySelectorAll('.sp-particle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
       });
     });
 
@@ -809,5 +877,59 @@ export class SettingsPanel {
       btn.textContent = `📷 ${name}`;
     }
     if (type === 'background') this.lastImagePath = filePath;
+  }
+
+  /** Update UI controls to reflect a terminal's visual settings */
+  refreshFromVisual(vs: Record<string, any>): void {
+    if (!this.visible) return;
+
+    const defaults: Record<string, any> = {
+      bgColor: '#1a1a2e', textColor: '#c8c8d8', borderColor: '#444444',
+      titlebarColor: '#444444', cursorColor: '#ffffff', particleColor: '#ffffff', statusBarColor: '#30e060',
+      bgOpacity: 0.2, overlayOpacity: 0.05, opacity: 0.9,
+      particleOpacity: 1, particleSpeed: 1, titlebarOpacity: 1,
+      blur: 10, borderWidth: 1, borderRadius: 8, padding: 0, fontSize: 14,
+      bgSize: 'contain', bgPosition: 'center center', boxShadow: '',
+      cursorStyle: 'block', textGlow: '', font: 'Cascadia Code', particles: 'none',
+      scanlines: false,
+    };
+
+    const merged = { ...defaults, ...vs };
+
+    // Update color inputs
+    for (const key of ['bgColor', 'textColor', 'borderColor', 'titlebarColor', 'cursorColor', 'particleColor', 'statusBarColor']) {
+      this.updateInput(key, merged[key]);
+    }
+    // Update percent range inputs
+    for (const key of ['bgOpacity', 'overlayOpacity', 'opacity', 'particleOpacity', 'particleSpeed', 'titlebarOpacity']) {
+      const el = this.panel.querySelector(`[data-key="${key}"]`) as HTMLInputElement;
+      if (el) {
+        el.value = String(Math.round(merged[key] * 100));
+        const span = el.nextElementSibling as HTMLElement;
+        if (span) span.textContent = `${Math.round(merged[key] * 100)}%`;
+      }
+    }
+    // Update px range inputs
+    for (const key of ['blur', 'borderWidth', 'borderRadius', 'padding', 'fontSize']) {
+      const el = this.panel.querySelector(`[data-key="${key}"]`) as HTMLInputElement;
+      if (el) {
+        el.value = String(merged[key]);
+        const span = el.nextElementSibling as HTMLElement;
+        if (span) span.textContent = `${merged[key]}px`;
+      }
+    }
+    // Update selects
+    for (const key of ['bgSize', 'bgPosition', 'boxShadow', 'cursorStyle', 'textGlow', 'font']) {
+      const el = this.panel.querySelector(`[data-key="${key}"]`) as HTMLSelectElement;
+      if (el) el.value = merged[key];
+    }
+    // Particle grid active state
+    this.panel.querySelectorAll('.sp-particle-btn').forEach(btn => {
+      const val = (btn as HTMLElement).dataset['particle'];
+      btn.classList.toggle('active', val === merged.particles);
+    });
+    // Scanlines checkbox
+    const scanEl = this.panel.querySelector(`[data-key="scanlines"]`) as HTMLInputElement;
+    if (scanEl) scanEl.checked = merged.scanlines;
   }
 }

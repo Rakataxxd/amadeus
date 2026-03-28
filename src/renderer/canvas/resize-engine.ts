@@ -1,5 +1,8 @@
+import type { Rect } from './snap-engine.js';
+
 const MIN_WIDTH = 200;
 const MIN_HEIGHT = 100;
+const SNAP_THRESHOLD = 15;
 
 export class ResizeEngine {
   private canvas: HTMLElement;
@@ -19,6 +22,7 @@ export class ResizeEngine {
   private boundMouseUp: (e: MouseEvent) => void;
 
   onResizeEnd: ((el: HTMLElement) => void) | null = null;
+  getOtherRects: (() => Rect[]) | null = null;
 
   constructor(canvas: HTMLElement) {
     this.canvas = canvas;
@@ -90,6 +94,63 @@ export class ResizeEngine {
       if (newTop < 0) {
         newHeight += newTop;
         newTop = 0;
+      }
+    }
+
+    // Snap edges to other terminals and canvas edges
+    if (!e.shiftKey) {
+      const others = this.getOtherRects?.() || [];
+      const right = newLeft + newWidth;
+      const bottom = newTop + newHeight;
+
+      // Snap targets: canvas edges + other terminal edges
+      const xEdges = [0, canvasW];
+      const yEdges = [0, canvasH];
+      for (const o of others) {
+        xEdges.push(o.left, o.left + o.width);
+        yEdges.push(o.top, o.top + o.height);
+      }
+
+      // Snap right edge (for e resize)
+      if (dir.includes('e')) {
+        for (const edge of xEdges) {
+          if (Math.abs(right - edge) < SNAP_THRESHOLD) {
+            newWidth = edge - newLeft;
+            break;
+          }
+        }
+      }
+
+      // Snap left edge (for w resize)
+      if (dir.includes('w')) {
+        for (const edge of xEdges) {
+          if (Math.abs(newLeft - edge) < SNAP_THRESHOLD) {
+            newWidth += newLeft - edge;
+            newLeft = edge;
+            break;
+          }
+        }
+      }
+
+      // Snap bottom edge (for s resize)
+      if (dir.includes('s')) {
+        for (const edge of yEdges) {
+          if (Math.abs(bottom - edge) < SNAP_THRESHOLD) {
+            newHeight = edge - newTop;
+            break;
+          }
+        }
+      }
+
+      // Snap top edge (for n resize)
+      if (dir.includes('n')) {
+        for (const edge of yEdges) {
+          if (Math.abs(newTop - edge) < SNAP_THRESHOLD) {
+            newHeight += newTop - edge;
+            newTop = edge;
+            break;
+          }
+        }
       }
     }
 

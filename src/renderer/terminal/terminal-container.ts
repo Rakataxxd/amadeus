@@ -222,6 +222,11 @@ export class TerminalContainer {
   initTerminal(): TerminalInstance {
     this.termInstance = new TerminalInstance(this.xtermLayer);
 
+    // Default particles if none set
+    if (!this._visualSettings.particles) {
+      this.setParticles('matrix');
+    }
+
     return this.termInstance;
   }
 
@@ -348,12 +353,38 @@ export class TerminalContainer {
     if (color) this._visualSettings.particleColor = color;
   }
 
+  setParticleOpacity(opacity: number): void {
+    this.particleEngine.setOpacity(opacity);
+    this._visualSettings.particleOpacity = opacity;
+  }
+
+  setParticleSpeed(speed: number): void {
+    this.particleEngine.setSpeed(speed);
+    this._visualSettings.particleSpeed = speed;
+  }
+
   updateVisual(key: string, value: any): void {
     (this._visualSettings as any)[key] = value;
   }
 
   getVisualSettings(): TerminalVisualSettings {
     return { ...this._visualSettings };
+  }
+
+  getCustomName(): string {
+    return this.titlebar.getName();
+  }
+
+  setCustomName(name: string): void {
+    this.titlebar.setName(name);
+  }
+
+  setStatusBusy(): void { this.titlebar.setBusy(); }
+  setStatusDone(): void { this.titlebar.setDone(); }
+  setStatusIdle(): void { this.titlebar.setIdle(); }
+  setStatusBarColor(color: string): void {
+    this.titlebar.setStatusColor(color);
+    this._visualSettings.statusBarColor = color;
   }
 
   applyVisualSettings(vs: TerminalVisualSettings): void {

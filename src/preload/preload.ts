@@ -58,8 +58,9 @@ contextBridge.exposeInMainWorld('amadeus', {
     getAnimeThemesPath: (): Promise<string> => ipcRenderer.invoke('app:getAnimeThemesPath'),
   },
   session: {
-    save: (data: any): Promise<void> => ipcRenderer.invoke('session:save', data),
+    save: (data: any): void => { ipcRenderer.sendSync('session:saveSync', data); },
     load: (): Promise<any> => ipcRenderer.invoke('session:load'),
+    onRequestSave: (cb: () => void) => ipcRenderer.on('session:request-save', () => cb()),
   },
   themes: {
     loadCustom: (): Promise<Record<string, any>> => ipcRenderer.invoke('themes:loadCustom'),

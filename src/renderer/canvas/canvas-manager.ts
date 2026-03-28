@@ -27,6 +27,7 @@ export class CanvasManager {
   private resizeEngine: ResizeEngine;
 
   private config: AmadeusConfig | null = null;
+  onFocusChange: ((container: TerminalContainer) => void) | null = null;
 
   constructor(canvasEl: HTMLElement) {
     this.canvasEl = canvasEl;
@@ -44,6 +45,12 @@ export class CanvasManager {
     this.resizeEngine.onResizeEnd = (el) => {
       const container = this.containers.find(c => c.element === el);
       container?.fit();
+    };
+
+    this.resizeEngine.getOtherRects = () => {
+      return this.containers
+        .filter(c => c.element !== this.activeContainer?.element)
+        .map(c => c.getPixelRect());
     };
 
   }
@@ -75,7 +82,9 @@ export class CanvasManager {
     this.zManager.bringToFront(container.element);
 
     // Initialize xterm
-    container.initTerminal();
+    const inst = container.initTerminal();
+    inst.onUserInput = () => container.setStatusBusy();
+    inst.onPromptReady = () => container.setStatusDone();
 
     // Apply theme if config available
     if (config) {
@@ -119,7 +128,9 @@ export class CanvasManager {
     this.zManager.register(container.element);
     this.zManager.setZ(container.element, lt.z);
 
-    container.initTerminal();
+    const inst = container.initTerminal();
+    inst.onUserInput = () => container.setStatusBusy();
+    inst.onPromptReady = () => container.setStatusDone();
 
     if (config) {
       this.themeEngine.applyToContainer(container, shellId);
@@ -133,6 +144,9 @@ export class CanvasManager {
     // Restore visual settings
     if (lt.visual) {
       container.applyVisualSettings(lt.visual);
+    }
+    if (lt.customName) {
+      container.setCustomName(lt.customName);
     }
 
     // FIFO: push to pending
@@ -313,6 +327,7 @@ export class CanvasManager {
     }
     this.activeContainer = container;
     container.focus();
+    this.onFocusChange?.(container);
   }
 
   private removeContainer(container: TerminalContainer): void {
@@ -356,6 +371,7 @@ export class CanvasManager {
         bg_offset_y: c.bgOffsetY,
         bg_scale: c.bgScale,
         cwd: c.getCurrentCwd() || undefined,
+        customName: c.getCustomName() || undefined,
         visual: c.getVisualSettings(),
       };
     });

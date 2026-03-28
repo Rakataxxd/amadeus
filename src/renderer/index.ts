@@ -43,8 +43,9 @@ declare global {
         getAnimeThemesPath: () => Promise<string>;
       };
       session: {
-        save: (data: any) => Promise<void>;
+        save: (data: any) => void;
         load: () => Promise<any>;
+        onRequestSave: (cb: () => void) => void;
       };
       themes: {
         loadCustom: () => Promise<Record<string, any>>;
@@ -86,12 +87,20 @@ function bootstrap(): void {
 
   const getCanvas = (): CanvasManager => activeCanvas;
 
+  const setupFocusCallback = (cm: CanvasManager) => {
+    cm.onFocusChange = (container: any) => {
+      settingsPanel.refreshFromVisual(container.getVisualSettings());
+    };
+  };
+  setupFocusCallback(initialCanvas);
+
   // New tab button
   document.getElementById('btn-new-tab')?.addEventListener('click', () => {
     const id = workspaceManager.createWorkspace();
     const ws = workspaceManager.getActiveWorkspace()!;
     const cm = new CanvasManager(ws);
     if (lastConfig) cm.applyConfig(lastConfig);
+    setupFocusCallback(cm);
     canvasManagers.set(id, cm);
     activeCanvas = cm;
   });
@@ -267,7 +276,14 @@ function bootstrap(): void {
     if (changes.boxShadow !== undefined) el.style.boxShadow = changes.boxShadow;
     if (changes.titlebarColor !== undefined) {
       const tb = el.querySelector('.terminal-titlebar') as HTMLElement;
-      if (tb) { tb.style.backgroundColor = changes.titlebarColor; tb.style.borderBottomColor = changes.titlebarColor; }
+      if (tb) { tb.style.backgroundColor = changes.titlebarColor; }
+    }
+    if (changes.titlebarOpacity !== undefined) {
+      const tb = el.querySelector('.terminal-titlebar') as HTMLElement;
+      if (tb) tb.style.opacity = String(changes.titlebarOpacity);
+    }
+    if (changes.statusBarColor !== undefined) {
+      container.setStatusBarColor(changes.statusBarColor);
     }
     if (changes.padding !== undefined) {
       const xtermLayer = el.querySelector('.xterm-layer') as HTMLElement;
@@ -303,6 +319,12 @@ function bootstrap(): void {
     if (changes.particleColor !== undefined) {
       container.setParticleColor(changes.particleColor);
     }
+    if (changes.particleOpacity !== undefined) {
+      container.setParticleOpacity(changes.particleOpacity);
+    }
+    if (changes.particleSpeed !== undefined) {
+      container.setParticleSpeed(changes.particleSpeed);
+    }
 
     // Custom CSS
     if (changes.customCSS !== undefined) {
@@ -319,6 +341,12 @@ function bootstrap(): void {
     for (const [k, v] of Object.entries(changes)) {
       container.updateVisual(k, v);
     }
+  };
+
+  settingsPanel.onGetCurrentState = () => {
+    const canvas = getCanvas();
+    const container = canvas.getActiveContainer();
+    return container ? container.getVisualSettings() : {};
   };
 
   settingsPanel.onPickImage = async (type) => {
@@ -389,6 +417,7 @@ function bootstrap(): void {
   };
 
   window.addEventListener('beforeunload', saveSession);
+  window.amadeus.session.onRequestSave(() => saveSession());
 
   // Restore session on startup
   (async () => {
@@ -424,6 +453,7 @@ function bootstrap(): void {
 
       const cm = new CanvasManager(wsEl);
       if (lastConfig) cm.applyConfig(lastConfig);
+      setupFocusCallback(cm);
       cm.initLayoutListener();
       canvasManagers.set(newId, cm);
 

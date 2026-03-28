@@ -53,6 +53,11 @@ function createWindow(): void {
     try { fs.writeFileSync(sessionFile, JSON.stringify(data, null, 2), 'utf-8'); } catch { /* ignore */ }
   });
 
+  ipcMain.on('session:saveSync', (e, data: unknown) => {
+    try { fs.writeFileSync(sessionFile, JSON.stringify(data, null, 2), 'utf-8'); } catch { /* ignore */ }
+    e.returnValue = true;
+  });
+
   ipcMain.handle('session:load', () => {
     try {
       if (fs.existsSync(sessionFile)) return JSON.parse(fs.readFileSync(sessionFile, 'utf-8'));
@@ -126,6 +131,14 @@ function createWindow(): void {
 
   mainWindow.loadFile(path.join(__dirname, '../../renderer/renderer/index.html'));
   // mainWindow.webContents.openDevTools({ mode: 'bottom' });
+
+  // Save session before closing — send signal to renderer and wait
+  mainWindow.on('close', (e) => {
+    if (mainWindow) {
+      mainWindow.webContents.send('session:request-save');
+    }
+  });
+
   mainWindow.on('closed', () => { mainWindow = null; ptyManager.closeAll(); configManager.stopWatching(); });
 }
 

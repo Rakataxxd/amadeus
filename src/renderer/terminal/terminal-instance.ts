@@ -7,6 +7,7 @@ import type { ProfileConfig } from '../../shared/types.js';
 let activeWebGLContexts = 0;
 const MAX_WEBGL_CONTEXTS = 16;
 
+
 export class TerminalInstance {
   readonly terminal: Terminal;
   private fitAddon: FitAddon;
@@ -14,12 +15,16 @@ export class TerminalInstance {
   private terminalId: string | null = null;
   private container: HTMLElement;
   private usingWebGL = false;
+  private _userTyped = false;
+  private _idleTimer: ReturnType<typeof setTimeout> | null = null;
+  onPromptReady: (() => void) | null = null;
+  onUserInput: (() => void) | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
 
     this.terminal = new Terminal({
-      allowTransparency: true,
+      allowTransparency: false,
       cursorBlink: true,
       theme: {
         background: '#000000',
@@ -36,6 +41,25 @@ export class TerminalInstance {
     this.fitAddon = new FitAddon();
     this.terminal.loadAddon(this.fitAddon);
     this.terminal.open(container);
+
+    // Force thin scrollbar — xterm uses custom scrollbar elements
+    setTimeout(() => {
+      const scrollbar = container.querySelector('.scrollbar.vertical') as HTMLElement;
+      if (scrollbar) {
+        scrollbar.style.width = '4px';
+        scrollbar.style.right = '0';
+        const slider = scrollbar.querySelector('.slider') as HTMLElement;
+        if (slider) {
+          slider.style.width = '4px';
+          slider.style.borderRadius = '2px';
+          slider.style.background = 'rgba(255,255,255,0.1)';
+          slider.style.left = '0';
+        }
+      }
+      // Also hide native scrollbar on viewport
+      const viewport = container.querySelector('.xterm-viewport') as HTMLElement;
+      if (viewport) viewport.style.overflowY = 'hidden';
+    }, 100);
 
     // Do NOT load WebGL by default — it doesn't support transparent backgrounds.
     // We use the canvas renderer which does support allowTransparency.
@@ -82,6 +106,11 @@ export class TerminalInstance {
       if (this.terminalId) {
         window.amadeus.terminal.write(this.terminalId, data);
       }
+      // Detect user pressing Enter (command execution)
+      if (data.includes('\r') || data.includes('\n')) {
+        this._userTyped = true;
+        this.onUserInput?.();
+      }
     });
 
     this.terminal.onResize(({ cols, rows }) => {
@@ -111,6 +140,14 @@ export class TerminalInstance {
 
   write(data: string): void {
     this.terminal.write(data);
+    if (!this._userTyped) return;
+
+    // After user typed, wait for output to stop for 2s = command done
+    if (this._idleTimer) clearTimeout(this._idleTimer);
+    this._idleTimer = setTimeout(() => {
+      this._userTyped = false;
+      this.onPromptReady?.();
+    }, 2000);
   }
 
   fit(): void {

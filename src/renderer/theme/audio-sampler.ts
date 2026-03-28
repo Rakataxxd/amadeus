@@ -3,7 +3,7 @@ export class AudioSampler {
 
   private context: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
-  private dataArray: Uint8Array = new Uint8Array(0);
+  private dataArray: Uint8Array<ArrayBuffer> = new Uint8Array(0);
   private _amplitude = 0;
   private _smoothed = 0;
   private _active = false;
@@ -27,7 +27,7 @@ export class AudioSampler {
       const source = this.context.createMediaStreamSource(stream);
       this.analyser = this.context.createAnalyser();
       this.analyser.fftSize = 256;
-      this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+      this.dataArray = new Uint8Array(this.analyser.frequencyBinCount) as Uint8Array<ArrayBuffer>;
       source.connect(this.analyser);
       this._active = true;
     } catch {

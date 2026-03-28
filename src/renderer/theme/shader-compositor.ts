@@ -118,6 +118,7 @@ export class ShaderCompositor {
       const result: CompileResult = compileShaderProgram(gl, profile.background_shader.fragment);
       if (result.error !== null) {
         errors.push(`[background_shader]\n${result.error}`);
+        if (this.bgProgram) gl.deleteProgram(this.bgProgram.program);
         const fallback = compileBackgroundPassThrough(gl);
         this.bgProgram = fallback ? makeProgram(gl, fallback) : null;
       } else {
@@ -125,6 +126,7 @@ export class ShaderCompositor {
         this.bgProgram = makeProgram(gl, result.program);
       }
     } else {
+      if (this.bgProgram) gl.deleteProgram(this.bgProgram.program);
       const fallback = compileBackgroundPassThrough(gl);
       this.bgProgram = fallback ? makeProgram(gl, fallback) : null;
     }
@@ -133,6 +135,7 @@ export class ShaderCompositor {
       const result: CompileResult = compileShaderProgram(gl, profile.post_shader.fragment);
       if (result.error !== null) {
         errors.push(`[post_shader]\n${result.error}`);
+        if (this.postProgram) gl.deleteProgram(this.postProgram.program);
         const fallback = compilePassThrough(gl);
         this.postProgram = fallback ? makeProgram(gl, fallback) : null;
       } else {
@@ -140,6 +143,7 @@ export class ShaderCompositor {
         this.postProgram = makeProgram(gl, result.program);
       }
     } else {
+      if (this.postProgram) gl.deleteProgram(this.postProgram.program);
       const fallback = compilePassThrough(gl);
       this.postProgram = fallback ? makeProgram(gl, fallback) : null;
     }
@@ -155,14 +159,15 @@ export class ShaderCompositor {
   }
 
   setImages(bgSrc: string, overlaySrc: string): void {
-    if (bgSrc) this.loadTexture(bgSrc, (tex) => { this.imageTexture = tex; });
-    if (overlaySrc) this.loadTexture(overlaySrc, (tex) => { this.overlayTexture = tex; });
+    if (bgSrc) this.loadTexture(bgSrc, this.imageTexture, (tex) => { this.imageTexture = tex; });
+    if (overlaySrc) this.loadTexture(overlaySrc, this.overlayTexture, (tex) => { this.overlayTexture = tex; });
   }
 
-  private loadTexture(src: string, onLoad: (tex: WebGLTexture) => void): void {
+  private loadTexture(src: string, oldTexture: WebGLTexture, onLoad: (tex: WebGLTexture) => void): void {
     const gl = this.gl;
     const img = new Image();
     img.onload = () => {
+      gl.deleteTexture(oldTexture);
       const tex = gl.createTexture()!;
       gl.bindTexture(gl.TEXTURE_2D, tex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);

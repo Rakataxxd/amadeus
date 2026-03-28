@@ -3,16 +3,47 @@
   "version": "1.0.0",
   "description": "Amadeus terminal emulator",
   "main": "dist/main/main/index.js",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
     "copy-assets": "node -e \"const fs=require('fs'),p=require('path');const d=p.join('dist','renderer','renderer');const v=p.join(d,'vendor');fs.mkdirSync(v,{recursive:true});fs.copyFileSync(p.join('src','renderer','index.html'),p.join(d,'index.html'));fs.copyFileSync(p.join('src','renderer','styles.css'),p.join(d,'styles.css'));fs.copyFileSync(p.join('node_modules','@xterm','xterm','css','xterm.css'),p.join(v,'xterm.css'));fs.copyFileSync(p.join('node_modules','@xterm','xterm','lib','xterm.mjs'),p.join(v,'xterm.mjs'));fs.copyFileSync(p.join('node_modules','@xterm','addon-fit','lib','addon-fit.mjs'),p.join(v,'addon-fit.mjs'));fs.copyFileSync(p.join('node_modules','@xterm','addon-webgl','lib','addon-webgl.mjs'),p.join(v,'addon-webgl.mjs'));\"",
     "build": "tsc -b && npm run copy-assets",
     "start": "npm run build && electron .",
     "dev": "concurrently \"tsc -b --watch\" \"electron .\"",
     "test": "npx tsx --test",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.amadeus.terminal",
+    "productName": "Amadeus",
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*",
+      "!node_modules/**/src/**",
+      "!node_modules/**/*.md",
+      "!node_modules/**/*.map"
+    ],
+    "asarUnpack": [
+      "node_modules/node-pty/**/*",
+      "dist/main/main/pty-worker.*"
+    ],
+    "extraResources": [
+      {
+        "from": "resources",
+        "to": "resources",
+        "filter": ["**/*"]
+      }
+    ],
+    "npmRebuild": false,
+    "forceCodeSigning": false,
+    "win": {
+      "target": [
+        {
+          "target": "dir",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": null,
+      "signAndEditExecutable": false
+    }
   },
   "keywords": [],
   "author": "",
@@ -22,13 +53,13 @@
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-webgl": "^0.19.0",
     "@xterm/xterm": "^6.0.0",
-    "electron": "^41.0.3",
     "node-pty": "^1.1.0",
     "xterm": "^5.3.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "concurrently": "^9.2.1",
+    "electron": "^41.0.3",
     "electron-builder": "^26.8.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"

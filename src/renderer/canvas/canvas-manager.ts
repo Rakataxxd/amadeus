@@ -46,7 +46,6 @@ export class CanvasManager {
       container?.fit();
     };
 
-    this.initLayoutListener();
   }
 
   createTerminal(shellId: string, elevated: boolean): void {
@@ -126,10 +125,20 @@ export class CanvasManager {
       this.themeEngine.applyToContainer(container, shellId);
     }
 
+    // If restoring with a saved CWD, auto-run claude
+    if (lt.cwd) {
+      container.autoCommand = 'claude --dangerously-skip-permissions\r';
+    }
+
+    // Restore visual settings
+    if (lt.visual) {
+      container.applyVisualSettings(lt.visual);
+    }
+
     // FIFO: push to pending
     this.pendingContainers.push({ container, shellId });
 
-    window.amadeus.terminal.create(shellId, elevated);
+    window.amadeus.terminal.create(shellId, elevated, lt.cwd);
     this.setActive(container);
   }
 
@@ -145,6 +154,15 @@ export class CanvasManager {
     const instance = container.getTerminalInstance();
     instance?.attachPty(terminalId);
     container.fit();
+
+    // Execute auto-command after shell initializes (session restore)
+    if (container.autoCommand) {
+      const cmd = container.autoCommand;
+      container.autoCommand = '';
+      setTimeout(() => {
+        window.amadeus.terminal.write(terminalId, cmd);
+      }, 800);
+    }
   }
 
   writeToTerminal(terminalId: string, data: string): void {
@@ -319,6 +337,43 @@ export class CanvasManager {
     }
 
     container.dispose();
+  }
+
+  /** Export terminal layout for session persistence */
+  getSessionTerminals(): LayoutTerminal[] {
+    const canvasW = this.canvasEl.clientWidth || 1;
+    const canvasH = this.canvasEl.clientHeight || 1;
+    return this.containers.map(c => {
+      const rect = c.getPixelRect();
+      return {
+        shell: c.shellId,
+        x: (rect.left / canvasW) * 100,
+        y: (rect.top / canvasH) * 100,
+        width: (rect.width / canvasW) * 100,
+        height: (rect.height / canvasH) * 100,
+        z: this.zManager.getZ(c.element),
+        bg_offset_x: c.bgOffsetX,
+        bg_offset_y: c.bgOffsetY,
+        bg_scale: c.bgScale,
+        cwd: c.getCurrentCwd() || undefined,
+        visual: c.getVisualSettings(),
+      };
+    });
+  }
+
+  /** Apply saved visual settings to all containers via a callback */
+  applyVisualSettingsAll(applyCb: (container: any, visual: any) => void): void {
+    for (const c of this.containers) {
+      const vs = c.getVisualSettings();
+      if (vs && Object.keys(vs).length > 0) {
+        applyCb(c, vs);
+      }
+    }
+  }
+
+  /** Check if this canvas has any terminals */
+  hasTerminals(): boolean {
+    return this.containers.length > 0;
   }
 
   getOtherRects(exclude: TerminalContainer): Rect[] {

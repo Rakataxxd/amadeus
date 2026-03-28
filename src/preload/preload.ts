@@ -23,7 +23,7 @@ const IPC = {
 
 contextBridge.exposeInMainWorld('amadeus', {
   terminal: {
-    create: (shellId: string, elevated: boolean) => ipcRenderer.send(IPC.PTY_CREATE, { shellId, elevated }),
+    create: (shellId: string, elevated: boolean, cwd?: string) => ipcRenderer.send(IPC.PTY_CREATE, { shellId, elevated, cwd }),
     write: (terminalId: string, data: string) => ipcRenderer.send(IPC.PTY_WRITE, { terminalId, data }),
     resize: (terminalId: string, cols: number, rows: number) => ipcRenderer.send(IPC.PTY_RESIZE, { terminalId, cols, rows }),
     close: (terminalId: string) => ipcRenderer.send(IPC.PTY_CLOSE, { terminalId }),
@@ -53,5 +53,17 @@ contextBridge.exposeInMainWorld('amadeus', {
     minimize: () => ipcRenderer.send('window:minimize'),
     toggleMaximize: () => ipcRenderer.send('window:toggleMaximize'),
     close: () => ipcRenderer.send('window:close'),
+  },
+  app: {
+    getAnimeThemesPath: (): Promise<string> => ipcRenderer.invoke('app:getAnimeThemesPath'),
+  },
+  session: {
+    save: (data: any): Promise<void> => ipcRenderer.invoke('session:save', data),
+    load: (): Promise<any> => ipcRenderer.invoke('session:load'),
+  },
+  themes: {
+    loadCustom: (): Promise<Record<string, any>> => ipcRenderer.invoke('themes:loadCustom'),
+    saveCustom: (themes: Record<string, any>): Promise<void> => ipcRenderer.invoke('themes:saveCustom', themes),
+    deleteCustom: (name: string): Promise<void> => ipcRenderer.invoke('themes:deleteCustom', name),
   },
 });

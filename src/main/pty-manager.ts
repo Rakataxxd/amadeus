@@ -18,14 +18,16 @@ export class PtyManager {
   start(): void {
     // Fork the worker using system Node (not Electron's node)
     // The compiled worker will be at dist/main/main/pty-worker.js
-    const workerPath = path.join(__dirname, 'pty-worker.js');
+    let workerPath = path.join(__dirname, 'pty-worker.js');
 
-    // Use execPath to find the system node. In Electron, process.execPath is electron.
-    // We need the system node. Try common paths.
-    let nodePath = 'node'; // fallback to PATH
+    // In packaged app, the worker is in app.asar but we need the unpacked version
+    // (system Node can't read from inside asar)
+    if (workerPath.includes('app.asar')) {
+      workerPath = workerPath.replace('app.asar', 'app.asar.unpacked');
+    }
 
     this.worker = fork(workerPath, [], {
-      execPath: nodePath,
+      execPath: 'node',
       stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
       silent: true,
     });
@@ -67,7 +69,7 @@ export class PtyManager {
     });
   }
 
-  create(shellId: string, shellConfig: ShellConfig, elevated: boolean): string {
+  create(shellId: string, shellConfig: ShellConfig, elevated: boolean, cwd?: string): string {
     const terminalId = `term-${this.nextId++}`;
     if (elevated) console.warn(`Elevated terminals not yet implemented, spawning ${shellId} normally`);
 
@@ -80,6 +82,7 @@ export class PtyManager {
         command: shellConfig.command,
         args: shellConfig.args,
         env: shellConfig.env || {},
+        cwd: cwd || undefined,
       });
     };
 

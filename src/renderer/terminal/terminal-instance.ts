@@ -22,7 +22,7 @@ export class TerminalInstance {
       allowTransparency: true,
       cursorBlink: true,
       theme: {
-        background: 'transparent',
+        background: '#000000',
         foreground: '#c0c0c0',
         cursor: '#c0c0c0',
         cursorAccent: '#000000',
@@ -89,6 +89,24 @@ export class TerminalInstance {
         window.amadeus.terminal.resize(this.terminalId, cols, rows);
       }
     });
+
+    // Ctrl+V to paste, Ctrl+C to copy (when there's a selection)
+    this.terminal.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if (e.type !== 'keydown') return true;
+      if (e.ctrlKey && !e.shiftKey && !e.altKey) {
+        if (e.key === 'v') {
+          e.preventDefault();
+          this.pasteClipboard();
+          return false;
+        }
+        if (e.key === 'c' && this.terminal.hasSelection()) {
+          e.preventDefault();
+          this.copySelection();
+          return false;
+        }
+      }
+      return true;
+    });
   }
 
   write(data: string): void {
@@ -115,7 +133,7 @@ export class TerminalInstance {
     this.terminal.options.cursorStyle = cursorStyleMap[profile.cursor_style] ?? 'block';
 
     this.terminal.options.theme = {
-      background: 'transparent',
+      background: profile.background?.color || '#000000',
       foreground: profile.text_color || '#c0c0c0',
       cursor: profile.cursor_color || '#c0c0c0',
       cursorAccent: '#000000',

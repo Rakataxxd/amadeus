@@ -2,6 +2,7 @@ import { CanvasManager } from './canvas/canvas-manager.js';
 import { KeybindingManager } from './keybindings/keybinding-manager.js';
 import { ShellPicker } from './ui/shell-picker.js';
 import { SettingsPanel } from './ui/settings-panel.js';
+import { WorkspaceManager } from './ui/workspace-manager.js';
 import type {
   AmadeusConfig,
   ShellInfo,
@@ -15,7 +16,7 @@ declare global {
   interface Window {
     amadeus: {
       terminal: {
-        create: (shellId: string, elevated: boolean) => void;
+        create: (shellId: string, elevated: boolean, cwd?: string) => void;
         write: (terminalId: string, data: string) => void;
         resize: (terminalId: string, cols: number, rows: number) => void;
         close: (terminalId: string) => void;
@@ -38,6 +39,18 @@ declare global {
         onAvailable: (cb: (shells: ShellInfo[]) => void) => void;
       };
       onError: (cb: (error: unknown) => void) => void;
+      app: {
+        getAnimeThemesPath: () => Promise<string>;
+      };
+      session: {
+        save: (data: any) => Promise<void>;
+        load: () => Promise<any>;
+      };
+      themes: {
+        loadCustom: () => Promise<Record<string, any>>;
+        saveCustom: (themes: Record<string, any>) => Promise<void>;
+        deleteCustom: (name: string) => Promise<void>;
+      };
     };
   }
 }
@@ -48,24 +61,62 @@ declare global {
 function bootstrap(): void {
   const canvasEl = document.getElementById('canvas');
   const pickerEl = document.getElementById('shell-picker');
+  const tabsContainer = document.getElementById('tabs-container');
 
-  if (!canvasEl || !pickerEl) {
+  if (!canvasEl || !pickerEl || !tabsContainer) {
     console.error('Amadeus: required DOM elements not found');
     return;
   }
 
-  const canvas = new CanvasManager(canvasEl);
+  // ── Workspace / tab manager ───────────────────────────────────────────────
+  const workspaceManager = new WorkspaceManager(canvasEl, tabsContainer);
+
+  // Map of workspace id -> CanvasManager
+  const canvasManagers = new Map<number, CanvasManager>();
+
+  // Track last applied config for new workspaces
+  let lastConfig: AmadeusConfig | null = null;
+
+  // Create the initial CanvasManager for workspace 1
+  const initialWs = workspaceManager.getActiveWorkspace()!;
+  const initialCanvas = new CanvasManager(initialWs);
+  canvasManagers.set(workspaceManager.getActiveId(), initialCanvas);
+
+  let activeCanvas = initialCanvas;
+
+  const getCanvas = (): CanvasManager => activeCanvas;
+
+  // New tab button
+  document.getElementById('btn-new-tab')?.addEventListener('click', () => {
+    const id = workspaceManager.createWorkspace();
+    const ws = workspaceManager.getActiveWorkspace()!;
+    const cm = new CanvasManager(ws);
+    if (lastConfig) cm.applyConfig(lastConfig);
+    canvasManagers.set(id, cm);
+    activeCanvas = cm;
+  });
+
+  // Tab changed
+  workspaceManager.onTabChanged = (tabId) => {
+    const cm = canvasManagers.get(tabId);
+    if (cm) activeCanvas = cm;
+  };
+
   const keybindings = new KeybindingManager();
   const shellPicker = new ShellPicker(pickerEl);
 
   // ── Config ────────────────────────────────────────────────────────────────
   const applyConfig = (config: AmadeusConfig): void => {
-    canvas.applyConfig(config);
+    lastConfig = config;
+    // Apply to all existing canvas managers
+    for (const cm of canvasManagers.values()) {
+      cm.applyConfig(config);
+    }
     keybindings.applyConfig(config.keybindings);
 
-    // If a start layout is specified, load it
+    // If a start layout is specified, load it on the active canvas
     if (config.general?.start_layout) {
-      canvas.loadLayout(config.general.start_layout);
+      getCanvas().loadLayout(config.general.start_layout);
     }
   };
 
@@ -75,36 +126,44 @@ function bootstrap(): void {
   // Request config immediately
   window.amadeus.config.get();
 
+  // ── Layout listener (registered once) ────────────────────────────────────
+  initialCanvas.initLayoutListener();
+
   // ── Terminal data/lifecycle ───────────────────────────────────────────────
   window.amadeus.terminal.onData((terminalId, data) => {
-    canvas.writeToTerminal(terminalId, data);
+    for (const cm of canvasManagers.values()) {
+      cm.writeToTerminal(terminalId, data);
+    }
   });
 
   window.amadeus.terminal.onCreated((info: TerminalInfo) => {
-    canvas.attachPty(info.terminalId, info.shellId);
+    // The active canvas is the one that issued the create request
+    activeCanvas.attachPty(info.terminalId, info.shellId);
   });
 
   window.amadeus.terminal.onExited((terminalId) => {
-    canvas.handleTerminalExit(terminalId);
+    for (const cm of canvasManagers.values()) {
+      cm.handleTerminalExit(terminalId);
+    }
   });
 
   // ── Keybindings ───────────────────────────────────────────────────────────
   keybindings.on('new_terminal', () => shellPicker.show());
 
-  keybindings.on('close_terminal', () => canvas.closeActiveTerminal());
+  keybindings.on('close_terminal', () => getCanvas().closeActiveTerminal());
 
-  keybindings.on('next_terminal', () => canvas.focusNext());
+  keybindings.on('next_terminal', () => getCanvas().focusNext());
 
-  keybindings.on('prev_terminal', () => canvas.focusPrev());
+  keybindings.on('prev_terminal', () => getCanvas().focusPrev());
 
   keybindings.on('save_layout', () => {
     const name = prompt('Save layout as:');
-    if (name) canvas.saveLayout(name);
+    if (name) getCanvas().saveLayout(name);
   });
 
   keybindings.on('load_layout', () => {
     const name = prompt('Load layout name:');
-    if (name) canvas.loadLayout(name);
+    if (name) getCanvas().loadLayout(name);
   });
 
   keybindings.on('fullscreen', () => {
@@ -124,9 +183,9 @@ function bootstrap(): void {
     window.amadeus.config.get();
   });
 
-  keybindings.on('copy', () => canvas.copyFromActive());
+  keybindings.on('copy', () => getCanvas().copyFromActive());
 
-  keybindings.on('paste', () => canvas.pasteToActive());
+  keybindings.on('paste', () => getCanvas().pasteToActive());
 
   // ── Shell picker ──────────────────────────────────────────────────────────
   window.amadeus.shell.onAvailable((shells: ShellInfo[]) => {
@@ -134,7 +193,7 @@ function bootstrap(): void {
   });
 
   shellPicker.onSelect((shell: ShellInfo) => {
-    canvas.createTerminal(shell.id, shell.elevated);
+    getCanvas().createTerminal(shell.id, shell.elevated);
   });
 
   // Request shell list
@@ -144,8 +203,13 @@ function bootstrap(): void {
   const settingsPanel = new SettingsPanel();
 
   settingsPanel.onChange = (changes) => {
+    const canvas = getCanvas();
     const container = canvas.getActiveContainer();
     if (!container) return;
+    applyVisualChanges(container, changes);
+  };
+
+  const applyVisualChanges = (container: any, changes: any) => {
     const inst = container.getTerminalInstance();
     const el = container.element;
 
@@ -153,6 +217,7 @@ function bootstrap(): void {
     if (changes.bgColor !== undefined) {
       const body = el.querySelector('.terminal-body') as HTMLElement;
       if (body) body.style.backgroundColor = changes.bgColor;
+      if (inst) inst.terminal.options.theme = { ...inst.terminal.options.theme, background: changes.bgColor };
     }
     if (changes.bgImage !== undefined) {
       const bgImg = el.querySelector('.bg-image') as HTMLImageElement;
@@ -211,7 +276,7 @@ function bootstrap(): void {
 
     // Text
     if (changes.textColor !== undefined && inst) {
-      inst.terminal.options.theme = { ...inst.terminal.options.theme, foreground: changes.textColor, background: 'transparent' };
+      inst.terminal.options.theme = { ...inst.terminal.options.theme, foreground: changes.textColor };
     }
     if (changes.fontSize !== undefined && inst) {
       inst.terminal.options.fontSize = changes.fontSize;
@@ -224,11 +289,19 @@ function bootstrap(): void {
       inst.terminal.options.cursorStyle = changes.cursorStyle;
     }
     if (changes.cursorColor !== undefined && inst) {
-      inst.terminal.options.theme = { ...inst.terminal.options.theme, cursor: changes.cursorColor, background: 'transparent' };
+      inst.terminal.options.theme = { ...inst.terminal.options.theme, cursor: changes.cursorColor };
     }
     if (changes.textGlow !== undefined) {
       const body = el.querySelector('.terminal-body') as HTMLElement;
       if (body) body.style.textShadow = changes.textGlow || '';
+    }
+
+    // Particles
+    if (changes.particles !== undefined) {
+      container.setParticles(changes.particles as any);
+    }
+    if (changes.particleColor !== undefined) {
+      container.setParticleColor(changes.particleColor);
     }
 
     // Custom CSS
@@ -240,6 +313,11 @@ function bootstrap(): void {
         el.appendChild(styleEl);
       }
       styleEl.textContent = changes.customCSS;
+    }
+
+    // Track all visual changes on the container for session persistence
+    for (const [k, v] of Object.entries(changes)) {
+      container.updateVisual(k, v);
     }
   };
 
@@ -265,6 +343,7 @@ function bootstrap(): void {
   const btnSettings = document.getElementById('btn-settings');
   if (btnSettings) {
     btnSettings.addEventListener('click', () => {
+      const canvas = getCanvas();
       const container = canvas.getActiveContainer();
       if (!container) return;
       // Build a profile from current state
@@ -286,6 +365,92 @@ function bootstrap(): void {
     // @ts-ignore
     window.amadeus.window?.close();
   });
+
+  // ── Session persistence ──────────────────────────────────────────────────
+
+  // Save session state before window closes
+  const saveSession = () => {
+    const wsState = workspaceManager.getSessionState();
+    const workspacesData: { id: number; name: string; terminals: any[] }[] = [];
+
+    for (const ws of wsState.workspaces) {
+      const cm = canvasManagers.get(ws.id);
+      workspacesData.push({
+        id: ws.id,
+        name: ws.name,
+        terminals: cm ? cm.getSessionTerminals() : [],
+      });
+    }
+
+    window.amadeus.session.save({
+      activeWorkspaceId: wsState.activeId,
+      workspaces: workspacesData,
+    });
+  };
+
+  window.addEventListener('beforeunload', saveSession);
+
+  // Restore session on startup
+  (async () => {
+    const session = await window.amadeus.session.load();
+    if (!session?.workspaces?.length) return;
+
+    // Wait for config to be applied first
+    await new Promise<void>(resolve => {
+      if (lastConfig) { resolve(); return; }
+      const check = setInterval(() => {
+        if (lastConfig) { clearInterval(check); resolve(); }
+      }, 50);
+      // Timeout after 2s
+      setTimeout(() => { clearInterval(check); resolve(); }, 2000);
+    });
+
+    // Restore workspaces
+    const idMap = workspaceManager.restoreWorkspaces({
+      workspaces: session.workspaces.map((ws: any) => ({ id: ws.id, name: ws.name })),
+      activeId: session.activeWorkspaceId,
+    });
+
+    // Remove the default canvas manager (from the initial workspace that was replaced)
+    canvasManagers.clear();
+
+    // Create canvas managers and terminals for each workspace
+    for (const ws of session.workspaces) {
+      const newId = idMap.get(ws.id);
+      if (newId === undefined) continue;
+
+      const wsEl = workspaceManager.getWorkspaceById(newId);
+      if (!wsEl) continue;
+
+      const cm = new CanvasManager(wsEl);
+      if (lastConfig) cm.applyConfig(lastConfig);
+      cm.initLayoutListener();
+      canvasManagers.set(newId, cm);
+
+      // Restore terminals in this workspace
+      if (ws.terminals?.length) {
+        for (const lt of ws.terminals) {
+          cm.createTerminalFromLayout(lt);
+        }
+      }
+    }
+
+    // Apply saved visual settings to restored terminals (delay to let xterm init)
+    setTimeout(() => {
+      for (const [, cm] of canvasManagers) {
+        cm.applyVisualSettingsAll((container: any, visual: any) => {
+          applyVisualChanges(container, visual);
+        });
+      }
+    }, 500);
+
+    // Set active canvas
+    const activeNewId = idMap.get(session.activeWorkspaceId);
+    if (activeNewId !== undefined) {
+      const cm = canvasManagers.get(activeNewId);
+      if (cm) activeCanvas = cm;
+    }
+  })();
 
   // ── Error handling ────────────────────────────────────────────────────────
   window.amadeus.onError((error) => {

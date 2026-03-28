@@ -1,7 +1,22 @@
 // pty-worker.ts — Runs as a child process using system Node.js
 // This avoids ABI mismatch between node-pty and Electron's Node.js
-import * as pty from 'node-pty';
+import * as path from 'path';
+import * as fs from 'fs';
 import * as os from 'os';
+
+// In packaged app, node-pty is in app.asar.unpacked/node_modules/
+// We need to resolve the correct path before requiring it
+function loadNodePty(): typeof import('node-pty') {
+  // Try unpacked path first (packaged app)
+  const unpackedPath = path.join(__dirname, '..', '..', '..', 'app.asar.unpacked', 'node_modules', 'node-pty');
+  if (fs.existsSync(unpackedPath)) {
+    return require(unpackedPath);
+  }
+  // Fallback to normal require (dev mode)
+  return require('node-pty');
+}
+
+const pty = loadNodePty();
 
 interface CreateMsg {
   type: 'create';
@@ -9,7 +24,9 @@ interface CreateMsg {
   command: string;
   args: string[];
   env: Record<string, string>;
+  cwd?: string;
 }
+
 
 interface WriteMsg {
   type: 'write';
@@ -31,18 +48,19 @@ interface CloseMsg {
 
 type InMsg = CreateMsg | WriteMsg | ResizeMsg | CloseMsg;
 
-const ptys = new Map<string, pty.IPty>();
+const ptys = new Map<string, any>();
 
 process.on('message', (msg: InMsg) => {
   switch (msg.type) {
     case 'create': {
       try {
         const env = { ...process.env, ...msg.env } as Record<string, string>;
+        const cwd = msg.cwd && fs.existsSync(msg.cwd) ? msg.cwd : os.homedir();
         const proc = pty.spawn(msg.command, msg.args, {
           name: 'xterm-256color',
           cols: 80,
           rows: 24,
-          cwd: os.homedir(),
+          cwd,
           env,
         });
         ptys.set(msg.id, proc);

@@ -1,6 +1,7 @@
 import { TerminalTitlebar } from './terminal-titlebar.js';
 import { TerminalInstance } from './terminal-instance.js';
-import type { ProfileConfig } from '../../shared/types.js';
+import type { ProfileConfig, TerminalVisualSettings } from '../../shared/types.js';
+import { ParticleEngine, type ParticlePreset } from '../theme/particle-engine.js';
 
 export class TerminalContainer {
   readonly element: HTMLElement;
@@ -11,6 +12,9 @@ export class TerminalContainer {
   bgOffsetX = 0;
   bgOffsetY = 0;
   bgScale = 1;
+  lastCwd = '';
+  autoCommand = '';
+  private _savedHeight = '';
 
   onClose: (() => void) | null = null;
 
@@ -21,6 +25,8 @@ export class TerminalContainer {
   private overlayLayer: HTMLElement;
   private xtermLayer: HTMLElement;
   private termInstance: TerminalInstance | null = null;
+  private particleEngine: ParticleEngine;
+  private _visualSettings: TerminalVisualSettings = {};
 
   constructor(shellId: string, shellName: string, profileName: string, elevated: boolean) {
     this.shellId = shellId;
@@ -34,8 +40,17 @@ export class TerminalContainer {
     this.titlebar = new TerminalTitlebar(shellName, profileName, elevated);
     this.titlebar.onClose = () => this.onClose?.();
     this.titlebar.onMinimize = () => {
-      // Toggle visibility
-      this.body.style.display = this.body.style.display === 'none' ? '' : 'none';
+      const minimized = this.element.classList.toggle('minimized');
+      this.body.style.display = minimized ? 'none' : '';
+      if (minimized) {
+        this._savedHeight = this.element.style.height;
+        this.element.style.height = '28px';
+        this.element.style.minHeight = '28px';
+      } else {
+        this.element.style.height = this._savedHeight || '400px';
+        this.element.style.minHeight = '100px';
+        this.termInstance?.fit();
+      }
     };
     this.element.appendChild(this.titlebar.element);
 
@@ -57,8 +72,9 @@ export class TerminalContainer {
     this.xtermLayer = document.createElement('div');
     this.xtermLayer.className = 'xterm-layer';
 
-    // xterm goes first (bottom), then bg image and overlay on top with pointer-events: none
+    // xterm goes first (bottom), then particles, bg image, overlay on top
     this.body.appendChild(this.xtermLayer);
+    this.particleEngine = new ParticleEngine(this.body);
     this.body.appendChild(this.bgLayer);
     this.body.appendChild(this.overlayLayer);
     this.element.appendChild(this.body);
@@ -68,6 +84,9 @@ export class TerminalContainer {
 
     // Right-click context menu
     this.addContextMenu();
+
+    // Image dragging with Alt+Click
+    this.setupImageDrag();
   }
 
   private addResizeHandles(): void {
@@ -134,8 +153,75 @@ export class TerminalContainer {
     });
   }
 
+  private setupImageDrag(): void {
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (!e.altKey) return;
+      e.preventDefault();
+      e.stopPropagation();
+      dragging = true;
+      startX = e.clientX - this.bgOffsetX;
+      startY = e.clientY - this.bgOffsetY;
+      // Temporarily enable pointer events on image
+      this.bgImageEl.style.pointerEvents = 'auto';
+      this.bgImageEl.style.cursor = 'move';
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!dragging) return;
+      this.bgOffsetX = e.clientX - startX;
+      this.bgOffsetY = e.clientY - startY;
+      this.bgImageEl.style.transform = `translate(${this.bgOffsetX}px, ${this.bgOffsetY}px) scale(${this.bgScale})`;
+    };
+
+    const onMouseUp = () => {
+      if (!dragging) return;
+      dragging = false;
+      this.bgImageEl.style.pointerEvents = 'none';
+      this.bgImageEl.style.cursor = '';
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      if (!e.altKey) return;
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.05 : 0.05;
+      this.bgScale = Math.max(0.1, Math.min(5.0, this.bgScale + delta));
+      this.bgImageEl.style.transform = `translate(${this.bgOffsetX}px, ${this.bgOffsetY}px) scale(${this.bgScale})`;
+    };
+
+    this.body.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+    this.body.addEventListener('wheel', onWheel, { passive: false });
+  }
+
+  /** Read CWD from the terminal buffer by finding the last prompt line */
+  getCurrentCwd(): string {
+    if (!this.termInstance) return this.lastCwd;
+    const buf = this.termInstance.terminal.buffer.active;
+    const cursorAbsY = buf.baseY + buf.cursorY;
+    // Scan from cursor position upward, checking up to 20 lines
+    for (let i = cursorAbsY; i >= Math.max(0, cursorAbsY - 20); i--) {
+      const line = buf.getLine(i);
+      if (!line) continue;
+      const text = line.translateToString(true).trim();
+      if (!text) continue;
+      // cmd.exe: "C:\path>" or "C:\path>some command"
+      const cmdMatch = text.match(/^([A-Z]:\\[^>]*?)>/i);
+      if (cmdMatch) return cmdMatch[1];
+      // PowerShell: "PS C:\path>" or "PS C:\path> command"
+      const psMatch = text.match(/^PS\s+([A-Z]:\\[^>]*?)>/i);
+      if (psMatch) return psMatch[1];
+    }
+    return this.lastCwd;
+  }
+
   initTerminal(): TerminalInstance {
     this.termInstance = new TerminalInstance(this.xtermLayer);
+
     return this.termInstance;
   }
 
@@ -252,7 +338,30 @@ export class TerminalContainer {
     this.termInstance?.pasteClipboard();
   }
 
+  setParticles(preset: ParticlePreset): void {
+    this.particleEngine.setPreset(preset);
+    this._visualSettings.particles = preset;
+  }
+
+  setParticleColor(color: string | null): void {
+    this.particleEngine.setColor(color);
+    if (color) this._visualSettings.particleColor = color;
+  }
+
+  updateVisual(key: string, value: any): void {
+    (this._visualSettings as any)[key] = value;
+  }
+
+  getVisualSettings(): TerminalVisualSettings {
+    return { ...this._visualSettings };
+  }
+
+  applyVisualSettings(vs: TerminalVisualSettings): void {
+    this._visualSettings = { ...vs };
+  }
+
   dispose(): void {
+    this.particleEngine.dispose();
     this.termInstance?.dispose();
     if (this.element.parentElement) {
       this.element.parentElement.removeChild(this.element);

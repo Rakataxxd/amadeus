@@ -12,7 +12,7 @@ snap_to_grid = false
 grid_size = 20
 
 [shells.powershell]
-command = "pwsh.exe"
+command = "powershell.exe"
 args = []
 profile = "default"
 elevated = false

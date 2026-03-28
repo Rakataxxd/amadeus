@@ -11,13 +11,13 @@ export function registerIpcHandlers(
 ): void {
   const send = (channel: string, data: any) => getWindow()?.webContents.send(channel, data);
 
-  ipcMain.on(IPC.PTY_CREATE, (_e, { shellId, elevated }) => {
-    console.log('[IPC] PTY_CREATE received:', shellId, elevated);
+  ipcMain.on(IPC.PTY_CREATE, (_e, { shellId, elevated, cwd }) => {
+    console.log('[IPC] PTY_CREATE received:', shellId, elevated, cwd || '(default)');
     const config = configManager.current;
     const shellConfig = config.shells[shellId];
     if (!shellConfig) { console.log('[IPC] Unknown shell:', shellId); send(IPC.ERROR, { source: 'pty', message: `Unknown shell: ${shellId}` }); return; }
     console.log('[IPC] Creating PTY for:', shellConfig.command);
-    ptyManager.create(shellId, shellConfig, elevated);
+    ptyManager.create(shellId, shellConfig, elevated, cwd);
   });
 
   ipcMain.on(IPC.PTY_WRITE, (_e, { terminalId, data }) => ptyManager.write(terminalId, data));

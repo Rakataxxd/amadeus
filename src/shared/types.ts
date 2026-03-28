@@ -82,6 +82,33 @@ export interface LayoutConfig {
   terminals: LayoutTerminal[];
 }
 
+export interface TerminalVisualSettings {
+  bgColor?: string;
+  bgImage?: string;
+  bgOpacity?: number;
+  bgSize?: string;
+  bgPosition?: string;
+  textColor?: string;
+  textGlow?: string;
+  fontSize?: number;
+  font?: string;
+  borderColor?: string;
+  borderWidth?: number;
+  borderRadius?: number;
+  titlebarColor?: string;
+  cursorStyle?: string;
+  cursorColor?: string;
+  boxShadow?: string;
+  opacity?: number;
+  blur?: number;
+  scanlines?: boolean;
+  overlayImage?: string;
+  overlayOpacity?: number;
+  particles?: string;
+  particleColor?: string;
+  customCSS?: string;
+}
+
 export interface LayoutTerminal {
   shell: string;
   x: number;
@@ -92,6 +119,8 @@ export interface LayoutTerminal {
   bg_offset_x: number;
   bg_offset_y: number;
   bg_scale: number;
+  cwd?: string;
+  visual?: TerminalVisualSettings;
 }
 
 export interface ShellInfo {

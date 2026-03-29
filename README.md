@@ -2,6 +2,8 @@
 
 A beautiful, customizable terminal emulator for Windows built with Electron. Anime-themed backgrounds, particle effects, and a free-form canvas where you can arrange multiple terminal windows however you want.
 
+> **Note:** This version still has some known issues with background image displacement when resizing terminals. These will be fixed in a future update. If your background image disappears or looks off, you can fix it manually using **Alt + Scroll** (zoom) and **Alt + Drag** (reposition).
+
 ---
 
 ## Screenshots

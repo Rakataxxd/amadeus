@@ -115,6 +115,7 @@ export interface TerminalVisualSettings {
   bgOffsetX?: number;
   bgOffsetY?: number;
   bgScale?: number;
+  bgRotation?: number;
 }
 
 export interface LayoutTerminal {
@@ -127,6 +128,7 @@ export interface LayoutTerminal {
   bg_offset_x: number;
   bg_offset_y: number;
   bg_scale: number;
+  bg_rotation: number;
   cwd?: string;
   customName?: string;
   visual?: TerminalVisualSettings;

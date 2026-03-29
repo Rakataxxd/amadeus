@@ -33,6 +33,7 @@ export interface SettingsChange {
   bgOffsetX?: number;
   bgOffsetY?: number;
   bgScale?: number;
+  bgRotation?: number;
 }
 
 // Each preset entry: [settings, accent-color for the dot preview]
@@ -195,6 +196,70 @@ const ANIME_THEME_PRESETS: Record<string, AnimeThemeEntry> = {
     },
     accent: '#40c040',
     image: 'my-hero-academia.png',
+  },
+  'Asuka': {
+    settings: {
+      bgColor: '#0a0000', textColor: '#cc2020', textGlow: '0 0 10px rgba(204,32,32,0.4)',
+      borderColor: '#880000', titlebarColor: '#060000', bgOpacity: 0.45,
+      bgSize: 'contain', bgPosition: 'right bottom', boxShadow: '0 0 20px rgba(136,0,0,0.3)',
+      particles: 'stardust', particleColor: '#ffd22e', particleSpeed: 2.1,
+      opacity: 0.8, borderWidth: 0,
+    },
+    accent: '#880000',
+    image: 'asuka.png',
+  },
+  'K-ON!': {
+    settings: {
+      bgColor: '#31262d', textColor: '#c0d0e8', textGlow: '0 0 4px rgba(80,120,200,0.2)',
+      borderColor: '#1a2a40', titlebarColor: '#a171b7', bgOpacity: 0.5,
+      bgSize: 'contain', bgPosition: 'right bottom',
+      particles: 'confetti', borderWidth: 0, borderRadius: 7, titlebarOpacity: 0.27,
+    },
+    accent: '#a171b7',
+    image: 'k-on.png',
+  },
+  'Quintessential Quintuplets': {
+    settings: {
+      bgColor: '#000000', textColor: '#c0d0e8', textGlow: '0 0 4px rgba(80,120,200,0.2)',
+      borderColor: '#1a2a40', titlebarColor: '#423455', bgOpacity: 0.43,
+      bgSize: 'contain', bgPosition: 'right bottom',
+      particles: 'binary', particleColor: '#ee00ff', particleSpeed: 0.73, particleOpacity: 0.76,
+      borderWidth: 0, borderRadius: 0, titlebarOpacity: 0,
+    },
+    accent: '#423455',
+    image: 'quintessential-quintuplets.png',
+  },
+  'Nisekoi Chitoge': {
+    settings: {
+      bgColor: '#000000', textColor: '#c0d0e8', textGlow: '0 0 4px rgba(80,120,200,0.2)',
+      borderColor: '#1a2a40', titlebarColor: '#1a1c0d', bgOpacity: 0.27,
+      bgSize: 'contain', bgPosition: 'right bottom',
+      particles: 'stardust', particleSpeed: 1.96, blur: 12,
+      borderWidth: 0, borderRadius: 7, titlebarOpacity: 0.41,
+    },
+    accent: '#1a1c0d',
+    image: 'nisekoi-chitoge.png',
+  },
+  'Cyberpunk Edgerunners': {
+    settings: {
+      bgColor: '#000000', textColor: '#c0d0e8', textGlow: '0 0 4px rgba(80,120,200,0.2)',
+      borderColor: '#1a2a40', titlebarColor: '#231b1b', bgOpacity: 0.24,
+      bgSize: 'contain', bgPosition: 'right bottom',
+      particles: 'hearts', particleSpeed: 3,
+      borderWidth: 0, borderRadius: 7, titlebarOpacity: 0.31,
+    },
+    accent: '#231b1b',
+    image: 'cyberpunk-edgerunners.webp',
+  },
+  'Bunny Girl Senpai': {
+    settings: {
+      bgColor: '#000000', textColor: '#c0d0e8', textGlow: '0 0 4px rgba(80,120,200,0.2)',
+      borderColor: '#1a2a40', titlebarColor: '#000000', bgOpacity: 0.18,
+      bgSize: 'contain', bgPosition: 'right bottom',
+      particles: 'rain', borderWidth: 0, borderRadius: 7,
+    },
+    accent: '#4a90a8',
+    image: 'bunny-girl-senpai.png',
   },
 };
 

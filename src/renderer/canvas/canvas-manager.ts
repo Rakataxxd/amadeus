@@ -123,6 +123,7 @@ export class CanvasManager {
     container.bgOffsetX = lt.bg_offset_x ?? 0;
     container.bgOffsetY = lt.bg_offset_y ?? 0;
     container.bgScale = lt.bg_scale ?? 1;
+    container.bgRotation = lt.bg_rotation ?? 0;
 
     this.canvasEl.appendChild(container.element);
     this.containers.push(container);
@@ -249,6 +250,7 @@ export class CanvasManager {
         bg_offset_x: c.bgOffsetX,
         bg_offset_y: c.bgOffsetY,
         bg_scale: c.bgScale,
+        bg_rotation: c.bgRotation,
       };
     });
 
@@ -384,6 +386,7 @@ export class CanvasManager {
         bg_offset_x: c.bgOffsetX,
         bg_offset_y: c.bgOffsetY,
         bg_scale: c.bgScale,
+        bg_rotation: c.bgRotation,
         cwd: c.getCurrentCwd() || undefined,
         customName: c.getCustomName() || undefined,
         visual: c.getVisualSettings(),

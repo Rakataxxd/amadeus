@@ -12,6 +12,7 @@ export class TerminalContainer {
   bgOffsetX = 0;
   bgOffsetY = 0;
   bgScale = 1;
+  bgRotation = 0;
   lastCwd = '';
   autoCommand = '';
   private _savedHeight = '';
@@ -153,6 +154,10 @@ export class TerminalContainer {
     });
   }
 
+  private applyImageTransform(): void {
+    this.bgImageEl.style.transform = `translate(${this.bgOffsetX}px, ${this.bgOffsetY}px) scale(${this.bgScale}) rotate(${this.bgRotation}deg)`;
+  }
+
   private setupImageDrag(): void {
     let dragging = false;
     let startX = 0;
@@ -173,7 +178,7 @@ export class TerminalContainer {
       if (!dragging) return;
       this.bgOffsetX = e.clientX - startX;
       this.bgOffsetY = e.clientY - startY;
-      this.bgImageEl.style.transform = `translate(${this.bgOffsetX}px, ${this.bgOffsetY}px) scale(${this.bgScale})`;
+      this.applyImageTransform();
     };
 
     const onMouseUp = () => {
@@ -186,9 +191,16 @@ export class TerminalContainer {
     const onWheel = (e: WheelEvent) => {
       if (!e.altKey) return;
       e.preventDefault();
-      const delta = e.deltaY > 0 ? -0.05 : 0.05;
-      this.bgScale = Math.max(0.1, Math.min(5.0, this.bgScale + delta));
-      this.bgImageEl.style.transform = `translate(${this.bgOffsetX}px, ${this.bgOffsetY}px) scale(${this.bgScale})`;
+      if (e.shiftKey) {
+        // Alt + Shift + Scroll → rotate
+        const delta = e.deltaY > 0 ? -5 : 5;
+        this.bgRotation = (this.bgRotation + delta) % 360;
+      } else {
+        // Alt + Scroll → zoom
+        const delta = e.deltaY > 0 ? -0.05 : 0.05;
+        this.bgScale = Math.max(0.1, Math.min(5.0, this.bgScale + delta));
+      }
+      this.applyImageTransform();
     };
 
     this.body.addEventListener('mousedown', onMouseDown);
@@ -282,6 +294,26 @@ export class TerminalContainer {
 
     // Apply profile to terminal instance
     this.termInstance?.applyProfile(profile);
+
+    // Capture profile settings into _visualSettings for theme save/session persistence
+    const pbg = profile.background;
+    this._visualSettings.bgColor = pbg?.color || '#1a1a2e';
+    if (pbg?.image) this._visualSettings.bgImage = pbg.image;
+    if (pbg?.image_opacity !== undefined) this._visualSettings.bgOpacity = pbg.image_opacity;
+    if (pbg?.image_size) this._visualSettings.bgSize = pbg.image_size;
+    if (pbg?.image_position) this._visualSettings.bgPosition = pbg.image_position;
+    if (profile.text_color) this._visualSettings.textColor = profile.text_color;
+    if (profile.text_glow !== undefined) this._visualSettings.textGlow = profile.text_glow;
+    if (profile.border_color) this._visualSettings.borderColor = profile.border_color;
+    if (profile.border_width !== undefined) this._visualSettings.borderWidth = profile.border_width;
+    if (profile.border_radius !== undefined) this._visualSettings.borderRadius = profile.border_radius;
+    if (profile.titlebar_color) this._visualSettings.titlebarColor = profile.titlebar_color;
+    if (profile.cursor_style) this._visualSettings.cursorStyle = profile.cursor_style as any;
+    if (profile.cursor_color) this._visualSettings.cursorColor = profile.cursor_color;
+    if (profile.box_shadow) this._visualSettings.boxShadow = profile.box_shadow;
+    if (profile.opacity !== undefined) this._visualSettings.opacity = profile.opacity;
+    if (profile.font) this._visualSettings.font = profile.font;
+    if (profile.font_size) this._visualSettings.fontSize = profile.font_size;
   }
 
   setPosition(xPct: number, yPct: number, wPct: number, hPct: number): void {
@@ -372,6 +404,7 @@ export class TerminalContainer {
       bgOffsetX: this.bgOffsetX,
       bgOffsetY: this.bgOffsetY,
       bgScale: this.bgScale,
+      bgRotation: this.bgRotation,
     };
   }
 

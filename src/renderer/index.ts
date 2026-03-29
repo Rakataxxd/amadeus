@@ -352,16 +352,18 @@ function bootstrap(): void {
       styleEl.textContent = changes.customCSS;
     }
 
-    // Background image offset & scale (Ctrl+Alt drag/scroll)
-    if (changes.bgOffsetX !== undefined || changes.bgOffsetY !== undefined || changes.bgScale !== undefined) {
+    // Background image offset, scale & rotation (Alt+drag/scroll, Alt+Shift+scroll)
+    if (changes.bgOffsetX !== undefined || changes.bgOffsetY !== undefined || changes.bgScale !== undefined || changes.bgRotation !== undefined) {
       const ox = changes.bgOffsetX ?? container.bgOffsetX;
       const oy = changes.bgOffsetY ?? container.bgOffsetY;
       const sc = changes.bgScale ?? container.bgScale;
+      const rot = changes.bgRotation ?? container.bgRotation;
       container.bgOffsetX = ox;
       container.bgOffsetY = oy;
       container.bgScale = sc;
+      container.bgRotation = rot;
       const bgImg = el.querySelector('.bg-image') as HTMLElement;
-      if (bgImg) bgImg.style.transform = `translate(${ox}px, ${oy}px) scale(${sc})`;
+      if (bgImg) bgImg.style.transform = `translate(${ox}px, ${oy}px) scale(${sc}) rotate(${rot}deg)`;
     }
 
     // Track all visual changes on the container for session persistence

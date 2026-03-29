@@ -30,6 +30,9 @@ export interface SettingsChange {
   particleColor?: string;
   particleOpacity?: number;
   particleSpeed?: number;
+  bgOffsetX?: number;
+  bgOffsetY?: number;
+  bgScale?: number;
 }
 
 // Each preset entry: [settings, accent-color for the dot preview]
@@ -669,76 +672,21 @@ export class SettingsPanel {
       const name = input?.value?.trim();
       if (!name) return;
 
-      // Capture current state from the UI controls
-      const settings: Partial<SettingsChange> = {};
-      const bgColor = this.getInputValue('bgColor');
-      const textColor = this.getInputValue('textColor');
-      const borderColor = this.getInputValue('borderColor');
-      const titlebarColor = this.getInputValue('titlebarColor');
-      const cursorColor = this.getInputValue('cursorColor');
-      if (bgColor) settings.bgColor = bgColor;
-      if (textColor) settings.textColor = textColor;
-      if (borderColor) settings.borderColor = borderColor;
-      if (titlebarColor) settings.titlebarColor = titlebarColor;
-      if (cursorColor) settings.cursorColor = cursorColor;
-
-      // Grab select/range values
-      const textGlow = this.getSelectValue('textGlow');
-      const boxShadow = this.getSelectValue('boxShadow');
-      const bgSize = this.getSelectValue('bgSize');
-      const bgPosition = this.getSelectValue('bgPosition');
-      const font = this.getSelectValue('font');
-      const cursorStyle = this.getSelectValue('cursorStyle');
-      if (textGlow !== undefined) settings.textGlow = textGlow;
-      if (boxShadow !== undefined) settings.boxShadow = boxShadow;
-      if (bgSize) settings.bgSize = bgSize;
-      if (bgPosition) settings.bgPosition = bgPosition;
-      if (font) settings.font = font;
-      if (cursorStyle) settings.cursorStyle = cursorStyle as any;
-
-      const opacity = this.getRangeValue('opacity');
-      const blur = this.getRangeValue('blur');
-      const bgOpacity = this.getRangeValue('bgOpacity');
-      const borderWidth = this.getRangeValue('borderWidth');
-      const borderRadius = this.getRangeValue('borderRadius');
-      const fontSize = this.getRangeValue('fontSize');
-      const padding = this.getRangeValue('padding');
-      if (opacity !== null) settings.opacity = opacity / 100;
-      if (blur !== null) settings.blur = blur;
-      if (bgOpacity !== null) settings.bgOpacity = bgOpacity / 100;
-      if (borderWidth !== null) settings.borderWidth = borderWidth;
-      if (borderRadius !== null) settings.borderRadius = borderRadius;
-      if (fontSize !== null) settings.fontSize = fontSize;
-      if (padding !== null) settings.padding = padding;
-
-      const scanlines = this.panel.querySelector('[data-key="scanlines"]') as HTMLInputElement;
-      if (scanlines) settings.scanlines = scanlines.checked;
-
-      // Particles
-      const activeParticle = this.panel.querySelector('.sp-particle-btn.active') as HTMLElement;
-      if (activeParticle) settings.particles = activeParticle.dataset['particle'] || 'none';
-      const particleColor = this.getInputValue('particleColor');
-      if (particleColor) settings.particleColor = particleColor;
-      const particleOpacity = this.getRangeValue('particleOpacity');
-      if (particleOpacity !== null) settings.particleOpacity = particleOpacity / 100;
-      const particleSpeed = this.getRangeValue('particleSpeed');
-      if (particleSpeed !== null) settings.particleSpeed = particleSpeed / 100;
-
-      // Titlebar opacity
-      const titlebarOpacity = this.getRangeValue('titlebarOpacity');
-      if (titlebarOpacity !== null) settings.titlebarOpacity = titlebarOpacity / 100;
-
-      // Grab background image from the active container's visual settings
+      // Capture the FULL current visual state from the active terminal
+      // This ensures the saved theme is exactly what the user sees
+      let settings: Partial<SettingsChange> = {};
       if (this.onGetCurrentState) {
         const currentState = this.onGetCurrentState();
-        if (currentState.bgImage) settings.bgImage = currentState.bgImage;
-        if (currentState.overlayImage) settings.overlayImage = currentState.overlayImage;
-      } else if (this.lastImagePath) {
-        settings.bgImage = this.lastImagePath;
+        // Copy all visual properties from the live terminal state
+        for (const [k, v] of Object.entries(currentState)) {
+          if (v !== undefined && v !== null) {
+            (settings as any)[k] = v;
+          }
+        }
       }
 
       // Use accent from border or text color
-      const accent = borderColor || textColor || '#6b5ce7';
+      const accent = settings.borderColor || settings.textColor || '#6b5ce7';
 
       this.customThemes[name] = {
         settings,

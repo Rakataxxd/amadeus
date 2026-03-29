@@ -165,7 +165,6 @@ export class TerminalContainer {
       dragging = true;
       startX = e.clientX - this.bgOffsetX;
       startY = e.clientY - this.bgOffsetY;
-      // Temporarily enable pointer events on image
       this.bgImageEl.style.pointerEvents = 'auto';
       this.bgImageEl.style.cursor = 'move';
     };
@@ -368,7 +367,12 @@ export class TerminalContainer {
   }
 
   getVisualSettings(): TerminalVisualSettings {
-    return { ...this._visualSettings };
+    return {
+      ...this._visualSettings,
+      bgOffsetX: this.bgOffsetX,
+      bgOffsetY: this.bgOffsetY,
+      bgScale: this.bgScale,
+    };
   }
 
   getCustomName(): string {

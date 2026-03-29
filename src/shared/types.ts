@@ -98,7 +98,7 @@ export interface TerminalVisualSettings {
   titlebarColor?: string;
   titlebarOpacity?: number;
   statusBarColor?: string;
-  cursorStyle?: string;
+  cursorStyle?: 'block' | 'underline' | 'bar';
   cursorColor?: string;
   boxShadow?: string;
   opacity?: number;
@@ -111,6 +111,10 @@ export interface TerminalVisualSettings {
   particleOpacity?: number;
   particleSpeed?: number;
   customCSS?: string;
+  padding?: number;
+  bgOffsetX?: number;
+  bgOffsetY?: number;
+  bgScale?: number;
 }
 
 export interface LayoutTerminal {

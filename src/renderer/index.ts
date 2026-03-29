@@ -146,8 +146,23 @@ function bootstrap(): void {
   });
 
   window.amadeus.terminal.onCreated((info: TerminalInfo) => {
-    // The active canvas is the one that issued the create request
-    activeCanvas.attachPty(info.terminalId, info.shellId);
+    const tryAttach = () => {
+      for (const cm of canvasManagers.values()) {
+        if (cm.hasPending()) {
+          cm.attachPty(info.terminalId, info.shellId);
+          return true;
+        }
+      }
+      return false;
+    };
+    if (!tryAttach()) {
+      // Retry after a short delay — handles race condition during session restore
+      setTimeout(() => {
+        if (!tryAttach()) {
+          activeCanvas.attachPty(info.terminalId, info.shellId);
+        }
+      }, 200);
+    }
   });
 
   window.amadeus.terminal.onExited((terminalId) => {
@@ -337,6 +352,18 @@ function bootstrap(): void {
       styleEl.textContent = changes.customCSS;
     }
 
+    // Background image offset & scale (Ctrl+Alt drag/scroll)
+    if (changes.bgOffsetX !== undefined || changes.bgOffsetY !== undefined || changes.bgScale !== undefined) {
+      const ox = changes.bgOffsetX ?? container.bgOffsetX;
+      const oy = changes.bgOffsetY ?? container.bgOffsetY;
+      const sc = changes.bgScale ?? container.bgScale;
+      container.bgOffsetX = ox;
+      container.bgOffsetY = oy;
+      container.bgScale = sc;
+      const bgImg = el.querySelector('.bg-image') as HTMLElement;
+      if (bgImg) bgImg.style.transform = `translate(${ox}px, ${oy}px) scale(${sc})`;
+    }
+
     // Track all visual changes on the container for session persistence
     for (const [k, v] of Object.entries(changes)) {
       container.updateVisual(k, v);
@@ -401,6 +428,18 @@ function bootstrap(): void {
     const wsState = workspaceManager.getSessionState();
     const workspacesData: { id: number; name: string; terminals: any[] }[] = [];
 
+    // Temporarily show hidden workspaces so getBoundingClientRect works
+    const hiddenEls: HTMLElement[] = [];
+    for (const ws of wsState.workspaces) {
+      const wsEl = workspaceManager.getWorkspaceById(ws.id);
+      if (wsEl && wsEl.style.display === 'none') {
+        wsEl.style.visibility = 'hidden';
+        wsEl.style.position = 'absolute';
+        wsEl.style.display = '';
+        hiddenEls.push(wsEl);
+      }
+    }
+
     for (const ws of wsState.workspaces) {
       const cm = canvasManagers.get(ws.id);
       workspacesData.push({
@@ -408,6 +447,13 @@ function bootstrap(): void {
         name: ws.name,
         terminals: cm ? cm.getSessionTerminals() : [],
       });
+    }
+
+    // Restore hidden workspaces
+    for (const el of hiddenEls) {
+      el.style.display = 'none';
+      el.style.visibility = '';
+      el.style.position = 'relative';
     }
 
     window.amadeus.session.save({
@@ -480,6 +526,7 @@ function bootstrap(): void {
       const cm = canvasManagers.get(activeNewId);
       if (cm) activeCanvas = cm;
     }
+
   })();
 
   // ── Error handling ────────────────────────────────────────────────────────

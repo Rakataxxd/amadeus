@@ -101,6 +101,9 @@ export class CanvasManager {
   }
 
   createTerminalFromLayout(lt: LayoutTerminal): void {
+    // Skip terminals with invalid dimensions (from hidden workspaces)
+    if (lt.width <= 0 || lt.height <= 0) return;
+
     const config = this.config;
     const shellId = lt.shell;
     const elevated = config?.shells[shellId]?.elevated ?? false;
@@ -111,13 +114,11 @@ export class CanvasManager {
     const container = new TerminalContainer(shellId, shellId, profileName, elevated);
     this.setupContainer(container);
 
-    const canvasW = this.canvasEl.clientWidth || 800;
-    const canvasH = this.canvasEl.clientHeight || 600;
-
-    container.element.style.left = `${(lt.x / 100) * canvasW}px`;
-    container.element.style.top = `${(lt.y / 100) * canvasH}px`;
-    container.element.style.width = `${(lt.width / 100) * canvasW}px`;
-    container.element.style.height = `${(lt.height / 100) * canvasH}px`;
+    // Use percentages directly so terminals scale with window size
+    container.element.style.left = `${lt.x}%`;
+    container.element.style.top = `${lt.y}%`;
+    container.element.style.width = `${lt.width}%`;
+    container.element.style.height = `${lt.height}%`;
 
     container.bgOffsetX = lt.bg_offset_x ?? 0;
     container.bgOffsetY = lt.bg_offset_y ?? 0;
@@ -136,9 +137,14 @@ export class CanvasManager {
       this.themeEngine.applyToContainer(container, shellId);
     }
 
-    // If restoring with a saved CWD, auto-run claude
+    // If restoring with a CWD different from home dir, auto-run claude
     if (lt.cwd) {
-      container.autoCommand = 'claude --dangerously-skip-permissions\r';
+      // Check if CWD looks like a project folder (not just C:\Users\X)
+      const parts = lt.cwd.replace(/\\/g, '/').replace(/\/+$/, '').split('/');
+      // Home dir is typically 3 parts: C:/Users/Name
+      if (parts.length > 3) {
+        container.autoCommand = 'claude --dangerously-skip-permissions\r';
+      }
     }
 
     // Restore visual settings
@@ -152,8 +158,16 @@ export class CanvasManager {
     // FIFO: push to pending
     this.pendingContainers.push({ container, shellId });
 
-    window.amadeus.terminal.create(shellId, elevated, lt.cwd);
+    if (lt.cwd) {
+      window.amadeus.terminal.create(shellId, elevated, lt.cwd);
+    } else {
+      window.amadeus.terminal.create(shellId, elevated);
+    }
     this.setActive(container);
+  }
+
+  hasPending(): boolean {
+    return this.pendingContainers.length > 0;
   }
 
   /**

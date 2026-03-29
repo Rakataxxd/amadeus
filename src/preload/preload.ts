@@ -23,7 +23,11 @@ const IPC = {
 
 contextBridge.exposeInMainWorld('amadeus', {
   terminal: {
-    create: (shellId: string, elevated: boolean, cwd?: string) => ipcRenderer.send(IPC.PTY_CREATE, { shellId, elevated, cwd }),
+    create: (shellId: string, elevated: boolean, cwd?: string) => {
+      const msg: Record<string, any> = { shellId, elevated };
+      if (cwd) msg.cwd = cwd;
+      ipcRenderer.send(IPC.PTY_CREATE, msg);
+    },
     write: (terminalId: string, data: string) => ipcRenderer.send(IPC.PTY_WRITE, { terminalId, data }),
     resize: (terminalId: string, cols: number, rows: number) => ipcRenderer.send(IPC.PTY_RESIZE, { terminalId, cols, rows }),
     close: (terminalId: string) => ipcRenderer.send(IPC.PTY_CLOSE, { terminalId }),

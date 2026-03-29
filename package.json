@@ -30,7 +30,9 @@
       {
         "from": "resources",
         "to": "resources",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "npmRebuild": false,
@@ -39,10 +41,12 @@
       "target": [
         {
           "target": "dir",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
-      "icon": null,
+      "icon": "resources/icon-256.png",
       "signAndEditExecutable": false
     }
   },
@@ -62,6 +66,7 @@
     "concurrently": "^9.2.1",
     "electron": "^41.0.3",
     "electron-builder": "^26.8.1",
+    "png-to-ico": "^3.0.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }

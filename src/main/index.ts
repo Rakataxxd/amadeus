@@ -15,9 +15,15 @@ function createWindow(): void {
   configManager.load();
   configManager.watch();
   ptyManager.start();
+  // Resolve icon path (works in dev and packaged)
+  const iconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'resources', 'icon-256.png')
+    : path.join(app.getAppPath(), 'resources', 'icon-256.png');
+
   mainWindow = new BrowserWindow({
     width: 1200, height: 800, frame: false, transparent: true,
     backgroundColor: '#00000000',
+    icon: iconPath,
     webPreferences: {
       nodeIntegration: false, contextIsolation: true,
       preload: path.join(__dirname, '../preload/preload.js'),

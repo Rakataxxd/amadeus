@@ -17,8 +17,8 @@ function createWindow(): void {
   ptyManager.start();
   // Resolve icon path (works in dev and packaged)
   const iconPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'resources', 'icon-256.png')
-    : path.join(app.getAppPath(), 'resources', 'icon-256.png');
+    ? path.join(process.resourcesPath, 'resources', 'icon.ico')
+    : path.join(app.getAppPath(), 'resources', 'icon.ico');
 
   mainWindow = new BrowserWindow({
     width: 1200, height: 800, frame: false, transparent: true,

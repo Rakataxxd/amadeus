@@ -46,7 +46,7 @@
           ]
         }
       ],
-      "icon": "resources/icon-256.png",
+      "icon": "resources/icon.ico",
       "signAndEditExecutable": false
     }
   },

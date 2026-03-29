@@ -6,7 +6,6 @@ A beautiful, customizable terminal emulator for Windows built with Electron. Ani
 
 ## Screenshots
 
-![Uploading image.png…]()
 
 <!-- ![Main View](screenshots/main.png) -->
 <!-- ![Themes](screenshots/themes.png) -->

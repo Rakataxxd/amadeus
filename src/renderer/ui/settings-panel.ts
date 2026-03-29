@@ -71,15 +71,6 @@ const ANIME_THEME_PRESETS: Record<string, AnimeThemeEntry> = {
     accent: '#4a90a8',
     image: 'silent-voice.png',
   },
-  'Evangelion': {
-    settings: {
-      bgColor: '#0d001a', textColor: '#b266ff', textGlow: '0 0 10px rgba(128,0,255,0.4)',
-      borderColor: '#6b00cc', titlebarColor: '#0a0014', bgOpacity: 0.25,
-      bgSize: 'contain', bgPosition: 'right bottom', boxShadow: '0 0 25px rgba(107,0,204,0.3)',
-    },
-    accent: '#6b00cc',
-    image: 'evangelion.png',
-  },
   'Steins;Gate': {
     settings: {
       bgColor: '#0a0f08', textColor: '#e0c850', textGlow: '0 0 8px rgba(224,200,80,0.35)',
@@ -97,24 +88,6 @@ const ANIME_THEME_PRESETS: Record<string, AnimeThemeEntry> = {
     },
     accent: '#ff4080',
     image: 'takopi.png',
-  },
-  'Nisekoi': {
-    settings: {
-      bgColor: '#1a0a14', textColor: '#ffb0c8', textGlow: '0 0 8px rgba(255,176,200,0.3)',
-      borderColor: '#e05080', titlebarColor: '#140810', bgOpacity: 0.3,
-      bgSize: 'contain', bgPosition: 'right bottom', boxShadow: '0 0 20px rgba(224,80,128,0.2)',
-    },
-    accent: '#e05080',
-    image: 'nisekoi.png',
-  },
-  'Toradora': {
-    settings: {
-      bgColor: '#1a1008', textColor: '#ffc070', textGlow: '0 0 8px rgba(255,192,112,0.35)',
-      borderColor: '#d08030', titlebarColor: '#140c06', bgOpacity: 0.3,
-      bgSize: 'contain', bgPosition: 'right bottom', boxShadow: '0 0 20px rgba(208,128,48,0.25)',
-    },
-    accent: '#e89040',
-    image: 'toradora.png',
   },
   'Dragon Ball': {
     settings: {

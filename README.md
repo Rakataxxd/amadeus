@@ -17,7 +17,7 @@ A beautiful, customizable terminal emulator for Windows built with Electron. Ani
 ## Features
 
 - Free-form canvas - drag, resize, and arrange multiple terminals anywhere
-- 21 built-in anime themes with background images
+- 18 built-in anime themes with background images
 - 12 color themes (Cyberpunk, Dracula, Tokyo Night, Monokai, Nord...)
 - 18 particle effects (matrix, rain, snow, fireflies, sakura, embers...)
 - Save and load your own custom themes
@@ -124,11 +124,11 @@ Find `Amadeus.exe` inside `dist/win-unpacked/`.
 
 ## Themes
 
-### Anime Themes (21)
+### Anime Themes (18)
 
 Each comes with a background image and matching colors:
 
-A Silent Voice, Evangelion, Steins;Gate, Takopi, Nisekoi, Toradora, Dragon Ball, Death Note, Attack on Titan, One Piece, Demon Slayer, Fullmetal Alchemist, Cowboy Bebop, Spirited Away, My Hero Academia, Asuka, K-ON!, Quintessential Quintuplets, Nisekoi Chitoge, Cyberpunk Edgerunners, Bunny Girl Senpai
+A Silent Voice, Steins;Gate, Takopi, Dragon Ball, Death Note, Attack on Titan, One Piece, Demon Slayer, Fullmetal Alchemist, Cowboy Bebop, Spirited Away, My Hero Academia, Asuka, K-ON!, Quintessential Quintuplets, Nisekoi Chitoge, Cyberpunk Edgerunners, Bunny Girl Senpai
 
 ### Color Themes (12)
 

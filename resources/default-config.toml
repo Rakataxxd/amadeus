@@ -2,7 +2,7 @@ version = 1
 
 [general]
 default_shell = "powershell"
-default_profile = "default"
+default_profile = "rei"
 start_layout = ""
 
 [canvas]
@@ -14,16 +14,47 @@ grid_size = 20
 [shells.powershell]
 command = "powershell.exe"
 args = []
-profile = "default"
+profile = "rei"
 elevated = false
 env = {}
 
 [shells.cmd]
 command = "cmd.exe"
 args = []
-profile = "default"
+profile = "rei"
 elevated = false
 env = {}
+
+[profiles.rei]
+font = "Cascadia Code"
+font_size = 14
+opacity = 1.0
+blur = 0
+text_color = "#c0d0e8"
+text_glow = "0 0 4px rgba(80,120,200,0.2)"
+border_color = "#1a2a40"
+border_width = 0
+border_radius = 7
+titlebar_color = "#000000"
+cursor_style = "block"
+cursor_color = "#5080cc"
+ligatures = true
+box_shadow = ""
+css_animation = ""
+custom_css = ""
+
+[profiles.rei.background]
+color = "#000000"
+image = "%ANIME_THEMES%/rei-ayanami.png"
+image_opacity = 0.18
+image_blur = 0
+image_size = "contain"
+image_position = "right bottom"
+image_draggable = true
+
+[profiles.rei.overlay]
+image = ""
+opacity = 0.05
 
 [profiles.default]
 font = "Cascadia Code"

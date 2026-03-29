@@ -124,9 +124,20 @@ export function parseConfig(tomlString: string): AmadeusConfig {
 
 function resolveImagePaths(config: AmadeusConfig): void {
   const home = os.homedir();
+  // Resolve %ANIME_THEMES% to bundled resources path
+  let animeThemesDir: string;
+  try {
+    const { app } = require('electron');
+    animeThemesDir = app.isPackaged
+      ? path.join(process.resourcesPath, 'resources', 'anime-themes')
+      : path.join(app.getAppPath(), 'resources', 'anime-themes');
+  } catch {
+    animeThemesDir = path.join(__dirname, '..', '..', '..', 'resources', 'anime-themes');
+  }
   const resolve = (p: string): string => {
     if (!p) return p;
     let resolved = p;
+    if (resolved.includes('%ANIME_THEMES%')) resolved = resolved.replace('%ANIME_THEMES%', animeThemesDir);
     if (resolved.startsWith('~')) resolved = path.join(home, resolved.slice(1));
     // Convert to file:// URL for CSP compatibility in renderer
     resolved = resolved.replace(/\\/g, '/');

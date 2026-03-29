@@ -39,7 +39,15 @@ A beautiful, customizable terminal emulator for Windows built with Electron. Ani
 
 ### Step by step
 
-Open PowerShell or CMD and run:
+Open **PowerShell as Administrator** and run this first (only once, fixes script permissions):
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+
+Type `S` (Yes) when it asks for confirmation. Then close that PowerShell.
+
+Now open a **normal PowerShell or CMD** and run:
 
 ```bash
 # Clone the repo
@@ -48,11 +56,8 @@ git clone https://github.com/Rakataxxd/amadeus.git
 # Go into the folder
 cd amadeus
 
-# Install everything
+# Install everything (electron-rebuild runs automatically)
 npm install
-
-# Rebuild native modules for Electron
-npx electron-rebuild
 
 # Build and run
 npm start
@@ -166,6 +171,14 @@ color = "#1a1a2e"
 ---
 
 ## Troubleshooting
+
+**PowerShell says "execution of scripts is disabled"?**
+
+Run this in PowerShell as Administrator:
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+Type `S` to confirm. Then retry `npm install`.
 
 **`node-pty` errors during install?**
 

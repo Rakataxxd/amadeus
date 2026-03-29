@@ -1,0 +1,172 @@
+{
+  "activeWorkspaceId": 1,
+  "workspaces": [
+    {
+      "id": 1,
+      "name": "Workspace 1",
+      "terminals": [
+        {
+          "shell": "cmd",
+          "x": 0,
+          "y": 26.331967213114755,
+          "width": 47.552083333333336,
+          "height": 38.52459016393443,
+          "z": 100,
+          "bg_offset_x": -428,
+          "bg_offset_y": 94,
+          "bg_scale": 2.1000000000000005,
+          "bg_rotation": 0,
+          "visual": {
+            "particles": "matrix",
+            "bgOffsetX": -428,
+            "bgOffsetY": 94,
+            "bgScale": 2.1000000000000005,
+            "bgOpacity": 0.31,
+            "bgRotation": 0
+          }
+        },
+        {
+          "shell": "cmd",
+          "x": 47.552083333333336,
+          "y": 26.946721311475407,
+          "width": 52.44791666666667,
+          "height": 37.90983606557377,
+          "z": 110,
+          "bg_offset_x": -930,
+          "bg_offset_y": 115,
+          "bg_scale": 2.8999999999999977,
+          "bg_rotation": 0,
+          "visual": {
+            "particles": "rain",
+            "bgColor": "#0d1520",
+            "textColor": "#a8d8ea",
+            "textGlow": "0 0 8px rgba(168,216,234,0.25)",
+            "borderColor": "#4a90a8",
+            "titlebarColor": "#0a1018",
+            "bgOpacity": 0.42,
+            "bgSize": "contain",
+            "bgPosition": "right bottom",
+            "boxShadow": "0 0 20px rgba(74,144,168,0.2)",
+            "bgImage": "%ANIME_THEMES%/silent-voice.png",
+            "bgOffsetX": -930,
+            "bgOffsetY": 115,
+            "bgScale": 2.8999999999999977,
+            "bgRotation": 0
+          }
+        },
+        {
+          "shell": "cmd",
+          "x": 0,
+          "y": 62.295081967213115,
+          "width": 100,
+          "height": 37.704918032786885,
+          "z": 120,
+          "bg_offset_x": -367,
+          "bg_offset_y": -12,
+          "bg_scale": 1.3500000000000003,
+          "bg_rotation": 0,
+          "visual": {
+            "particles": "stardust",
+            "bgColor": "#0a0000",
+            "textColor": "#cc2020",
+            "textGlow": "0 0 10px rgba(204,32,32,0.4)",
+            "borderColor": "#880000",
+            "titlebarColor": "#060000",
+            "bgOpacity": 0.55,
+            "bgSize": "contain",
+            "bgPosition": "right bottom",
+            "boxShadow": "0 0 20px rgba(136,0,0,0.3)",
+            "bgImage": "%ANIME_THEMES%/asuka.png",
+            "particleColor": "#ffd22e",
+            "bgOffsetX": -367,
+            "bgOffsetY": -12,
+            "bgScale": 1.3500000000000003,
+            "particleSpeed": 2.1,
+            "borderWidth": 0,
+            "opacity": 0.8,
+            "particleOpacity": 1,
+            "bgRotation": 0
+          }
+        },
+        {
+          "shell": "cmd",
+          "x": 0,
+          "y": 0,
+          "width": 100,
+          "height": 26.43282530737705,
+          "z": 130,
+          "bg_offset_x": -1193,
+          "bg_offset_y": -38,
+          "bg_scale": 1.7500000000000007,
+          "bg_rotation": 0,
+          "visual": {
+            "particles": "confetti",
+            "bgColor": "#31262d",
+            "bgImage": "%ANIME_THEMES%/k-on.png",
+            "bgOpacity": 0.5,
+            "bgSize": "contain",
+            "bgPosition": "right bottom",
+            "textColor": "#c0d0e8",
+            "textGlow": "0 0 4px rgba(80,120,200,0.2)",
+            "borderColor": "#1a2a40",
+            "borderWidth": 0,
+            "borderRadius": 7,
+            "titlebarColor": "#a171b7",
+            "cursorStyle": "block",
+            "cursorColor": "#5080cc",
+            "opacity": 1,
+            "font": "Cascadia Code",
+            "fontSize": 14,
+            "titlebarOpacity": 0.27,
+            "bgOffsetX": -1193,
+            "bgOffsetY": -38,
+            "bgScale": 1.7500000000000007,
+            "bgRotation": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Workspace 2",
+      "terminals": [
+        {
+          "shell": "cmd",
+          "x": 0,
+          "y": 0,
+          "width": 26.510416666666664,
+          "height": 91.70081967213115,
+          "z": 100,
+          "bg_offset_x": 11,
+          "bg_offset_y": -203,
+          "bg_scale": 1.6000000000000005,
+          "bg_rotation": 0,
+          "visual": {
+            "particles": "rain",
+            "bgColor": "#000000",
+            "bgImage": "%ANIME_THEMES%/bunny-girl-senpai.png",
+            "bgOpacity": 0.18,
+            "bgSize": "contain",
+            "bgPosition": "right bottom",
+            "textColor": "#c0d0e8",
+            "textGlow": "0 0 4px rgba(80,120,200,0.2)",
+            "borderColor": "#1a2a40",
+            "borderWidth": 0,
+            "borderRadius": 7,
+            "titlebarColor": "#000000",
+            "cursorStyle": "block",
+            "cursorColor": "#5080cc",
+            "opacity": 1,
+            "font": "Cascadia Code",
+            "fontSize": 14,
+            "titlebarOpacity": 0.27,
+            "bgOffsetX": 11,
+            "bgOffsetY": -203,
+            "bgScale": 1.6000000000000005,
+            "bgRotation": 0
+          }
+        }
+      ]
+    }
+  ]
+}

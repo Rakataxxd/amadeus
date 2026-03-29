@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('amadeus', {
   session: {
     save: (data: any): void => { ipcRenderer.sendSync('session:saveSync', data); },
     load: (): Promise<any> => ipcRenderer.invoke('session:load'),
+    loadDefault: (): Promise<any> => ipcRenderer.invoke('session:loadDefault'),
     onRequestSave: (cb: () => void) => ipcRenderer.on('session:request-save', () => cb()),
   },
   themes: {

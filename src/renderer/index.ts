@@ -45,6 +45,7 @@ declare global {
       session: {
         save: (data: any) => void;
         load: () => Promise<any>;
+        loadDefault: () => Promise<any>;
         onRequestSave: (cb: () => void) => void;
       };
       themes: {
@@ -467,26 +468,24 @@ function bootstrap(): void {
   window.addEventListener('beforeunload', saveSession);
   window.amadeus.session.onRequestSave(() => saveSession());
 
-  // Restore session on startup, or create a default terminal
+  // Restore session on startup, or load default layout
   (async () => {
-    const session = await window.amadeus.session.load();
+    let session = await window.amadeus.session.load();
+
+    // No user session — load the bundled default session
     if (!session?.workspaces?.length) {
-      // No session — create a default terminal once config is ready
-      const waitConfig = () => new Promise<void>(resolve => {
-        if (lastConfig) { resolve(); return; }
-        const check = setInterval(() => {
-          if (lastConfig) { clearInterval(check); resolve(); }
-        }, 50);
-        setTimeout(() => { clearInterval(check); resolve(); }, 2000);
-      });
-      await waitConfig();
-      if (lastConfig) {
-        const cfg = lastConfig as AmadeusConfig;
-        getCanvas().applyConfig(cfg);
-        getCanvas().createTerminal(cfg.general.default_shell || 'powershell', false);
-      }
-      return;
+      try {
+        const themesPath = await window.amadeus.app.getAnimeThemesPath();
+        const defaultSession = await window.amadeus.session.loadDefault();
+        if (defaultSession?.workspaces?.length) {
+          // Resolve %ANIME_THEMES% paths
+          const raw = JSON.stringify(defaultSession).replace(/%ANIME_THEMES%/g, themesPath.replace(/\\/g, '/'));
+          session = JSON.parse(raw);
+        }
+      } catch { /* ignore */ }
     }
+
+    if (!session?.workspaces?.length) return;
 
     // Wait for config to be applied first
     await new Promise<void>(resolve => {

@@ -65,6 +65,17 @@ function createWindow(): void {
     return null;
   });
 
+  ipcMain.handle('session:loadDefault', () => {
+    try {
+      const isDev = !app.isPackaged;
+      const defaultFile = isDev
+        ? path.join(app.getAppPath(), 'resources', 'default-session.json')
+        : path.join(process.resourcesPath, 'resources', 'default-session.json');
+      if (fs.existsSync(defaultFile)) return JSON.parse(fs.readFileSync(defaultFile, 'utf-8'));
+    } catch { /* ignore */ }
+    return null;
+  });
+
   // Save window bounds on close
   mainWindow.on('close', () => {
     try {

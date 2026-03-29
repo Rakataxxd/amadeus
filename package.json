@@ -5,6 +5,7 @@
   "main": "dist/main/main/index.js",
   "scripts": {
     "copy-assets": "node -e \"const fs=require('fs'),p=require('path');const d=p.join('dist','renderer','renderer');const v=p.join(d,'vendor');fs.mkdirSync(v,{recursive:true});fs.copyFileSync(p.join('src','renderer','index.html'),p.join(d,'index.html'));fs.copyFileSync(p.join('src','renderer','styles.css'),p.join(d,'styles.css'));fs.copyFileSync(p.join('node_modules','@xterm','xterm','css','xterm.css'),p.join(v,'xterm.css'));fs.copyFileSync(p.join('node_modules','@xterm','xterm','lib','xterm.mjs'),p.join(v,'xterm.mjs'));fs.copyFileSync(p.join('node_modules','@xterm','addon-fit','lib','addon-fit.mjs'),p.join(v,'addon-fit.mjs'));fs.copyFileSync(p.join('node_modules','@xterm','addon-webgl','lib','addon-webgl.mjs'),p.join(v,'addon-webgl.mjs'));\"",
+    "postinstall": "npx electron-rebuild 2>nul || true",
     "build": "tsc -b && npm run copy-assets",
     "start": "npm run build && electron .",
     "dev": "concurrently \"tsc -b --watch\" \"electron .\"",

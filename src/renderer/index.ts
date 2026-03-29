@@ -467,10 +467,26 @@ function bootstrap(): void {
   window.addEventListener('beforeunload', saveSession);
   window.amadeus.session.onRequestSave(() => saveSession());
 
-  // Restore session on startup
+  // Restore session on startup, or create a default terminal
   (async () => {
     const session = await window.amadeus.session.load();
-    if (!session?.workspaces?.length) return;
+    if (!session?.workspaces?.length) {
+      // No session — create a default terminal once config is ready
+      const waitConfig = () => new Promise<void>(resolve => {
+        if (lastConfig) { resolve(); return; }
+        const check = setInterval(() => {
+          if (lastConfig) { clearInterval(check); resolve(); }
+        }, 50);
+        setTimeout(() => { clearInterval(check); resolve(); }, 2000);
+      });
+      await waitConfig();
+      if (lastConfig) {
+        const cfg = lastConfig as AmadeusConfig;
+        getCanvas().applyConfig(cfg);
+        getCanvas().createTerminal(cfg.general.default_shell || 'powershell', false);
+      }
+      return;
+    }
 
     // Wait for config to be applied first
     await new Promise<void>(resolve => {

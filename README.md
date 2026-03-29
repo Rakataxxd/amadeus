@@ -1,144 +1,143 @@
 # Amadeus Terminal
 
-A beautiful, customizable terminal emulator built with Electron, featuring anime-themed backgrounds, particle effects, and a free-form canvas where you can arrange multiple terminal windows.
+A beautiful, customizable terminal emulator for Windows built with Electron. Anime-themed backgrounds, particle effects, and a free-form canvas where you can arrange multiple terminal windows however you want.
 
 ---
 
 ## Screenshots
 
 <!-- Add your screenshots here -->
-<!-- ![Screenshot 1](screenshots/screenshot1.png) -->
-<!-- ![Screenshot 2](screenshots/screenshot2.png) -->
-<!-- ![Screenshot 3](screenshots/screenshot3.png) -->
+<!-- ![Main View](screenshots/main.png) -->
+<!-- ![Themes](screenshots/themes.png) -->
+<!-- ![Multiple Terminals](screenshots/multiple.png) -->
+<!-- ![Settings](screenshots/settings.png) -->
 
 ---
 
 ## Features
 
-- **Free-form canvas** - Drag, resize, and arrange multiple terminal windows anywhere
-- **21 anime themes** - Evangelion, Steins;Gate, Death Note, K-ON!, Cyberpunk Edgerunners, and more
-- **12 color themes** - Cyberpunk, Dracula, Tokyo Night, Monokai, Nord, and more
-- **18 particle effects** - Matrix, rain, snow, fireflies, sakura, embers, hearts, and more
-- **Custom themes** - Save and load your own terminal themes with full visual state
-- **Background images** - Add any image, drag to reposition (Alt+Drag), zoom (Alt+Scroll), rotate (Alt+Shift+Scroll)
-- **Multiple workspaces** - Organize terminals into workspace tabs
-- **Session persistence** - Terminals, positions, themes, and workspaces are restored on restart
-- **Custom CSS** - Apply your own CSS to any terminal
-- **Configurable** - TOML config file for shells, profiles, keybindings
+- Free-form canvas - drag, resize, and arrange multiple terminals anywhere
+- 21 built-in anime themes with background images
+- 12 color themes (Cyberpunk, Dracula, Tokyo Night, Monokai, Nord...)
+- 18 particle effects (matrix, rain, snow, fireflies, sakura, embers...)
+- Save and load your own custom themes
+- Add any image as background
+- Multiple workspace tabs
+- Session persistence - everything restores on restart
+- Custom CSS per terminal
+- Configurable via TOML
 
 ---
 
 ## Installation
 
-### Prerequisites
+### What you need first
 
-- **Node.js** v18 or higher - [Download here](https://nodejs.org/)
-- **Git** - [Download here](https://git-scm.com/)
-- **Windows** (10 or 11)
+1. **Node.js** v18+ - Download from [nodejs.org](https://nodejs.org/) (pick the LTS version)
+2. **Git** - Download from [git-scm.com](https://git-scm.com/)
+3. **Windows 10 or 11**
 
-### Option 1: Pre-built (recommended)
+### Step by step
 
-1. Go to the [Releases](https://github.com/Rakataxxd/amadeus/releases) page
-2. Download the latest `.zip` file
-3. Extract and run `Amadeus.exe`
-
-### Option 2: Build from source
-
-Open a terminal (PowerShell or CMD) and run these commands one by one:
+Open PowerShell or CMD and run:
 
 ```bash
-# 1. Clone the repository
+# Clone the repo
 git clone https://github.com/Rakataxxd/amadeus.git
 
-# 2. Enter the folder
+# Go into the folder
 cd amadeus
 
-# 3. Install dependencies
+# Install everything
 npm install
 
-# 4. Rebuild native modules for Electron
+# Rebuild native modules for Electron
 npx electron-rebuild
 
-# 5. Build the project
-npm run build
-
-# 6. Run the app
+# Build and run
 npm start
 ```
 
-If everything worked, the Amadeus terminal should open.
+That's it. Amadeus should open.
 
-### Option 3: Build a portable executable
+### Build a portable .exe
 
-After completing steps 1-4 from Option 2:
+If you want a standalone folder you can copy anywhere:
 
 ```bash
-# Build the distributable
 npm run dist
 ```
 
-The output will be in `dist/win-unpacked/`. You can run `Amadeus.exe` from there.
+Find `Amadeus.exe` inside `dist/win-unpacked/`.
 
 ---
 
-## Troubleshooting
+## Controls
 
-### `node-pty` build errors
+### Terminal windows
 
-If you see errors about `node-pty` during `npm install`:
+| Action | How |
+|---|---|
+| Create new terminal | Click `+` button or `Ctrl+Shift+N` |
+| Close terminal | Click the X on the terminal titlebar or `Ctrl+Shift+W` |
+| Move terminal | Drag the titlebar |
+| Resize terminal | Drag any edge or corner |
+| Rename terminal | Double-click the titlebar text |
+| Switch terminal focus | Click on it, or `Ctrl+Tab` / `Ctrl+Shift+Tab` |
 
-1. Install the Windows build tools:
-   ```bash
-   npm install --global windows-build-tools
-   ```
-2. Or install Visual Studio Build Tools with the "Desktop development with C++" workload
+### Workspaces
 
-3. Then retry:
-   ```bash
-   npm install
-   npx electron-rebuild
-   ```
+| Action | How |
+|---|---|
+| New workspace | Click `+` at the end of the tab bar |
+| Switch workspace | Click the tab |
+| Close workspace | Click X on the tab |
+| Rename workspace | Double-click the tab text |
 
-### App opens but terminal is blank
+### Background image
 
-Make sure you ran `npx electron-rebuild` after `npm install`. This rebuilds `node-pty` for the correct Electron version.
+| Action | How |
+|---|---|
+| Move image | `Alt` + Drag |
+| Zoom image | `Alt` + Scroll wheel |
+| Rotate image | `Alt` + `Shift` + Scroll wheel |
+| Pick image file | Settings panel > Background > Choose image |
 
-### Terminals don't restore on restart
+### Settings panel
 
-Close the app by clicking the X button (not by force-killing). The session saves on graceful close.
+| Action | How |
+|---|---|
+| Open settings | Click the gear icon in the toolbar |
+| Apply anime theme | Click any anime theme button |
+| Apply color theme | Click any color theme button |
+| Change particles | Click a particle type in the Particles section |
+| Save current look | My Themes > type a name > Save current |
+| Load saved theme | Click your saved theme button |
+| Reset everything | Click Reset at the bottom |
 
 ---
 
-## Usage
+## Themes
 
-### Keybindings
+### Anime Themes (21)
 
-| Shortcut | Action |
-|---|---|
-| `Ctrl+Shift+N` | New terminal |
-| `Ctrl+Shift+W` | Close terminal |
-| `Ctrl+Tab` | Next terminal |
-| `Ctrl+Shift+Tab` | Previous terminal |
+Each comes with a background image and matching colors:
 
-### Image Controls
+A Silent Voice, Evangelion, Steins;Gate, Takopi, Nisekoi, Toradora, Dragon Ball, Death Note, Attack on Titan, One Piece, Demon Slayer, Fullmetal Alchemist, Cowboy Bebop, Spirited Away, My Hero Academia, Asuka, K-ON!, Quintessential Quintuplets, Nisekoi Chitoge, Cyberpunk Edgerunners, Bunny Girl Senpai
 
-| Shortcut | Action |
-|---|---|
-| `Alt + Drag` | Move background image |
-| `Alt + Scroll` | Zoom background image |
-| `Alt + Shift + Scroll` | Rotate background image |
+### Color Themes (12)
 
-### Terminal Windows
+Cyberpunk, Anime Purple, Naruto, Tokyo Night, Dracula, Monokai, Catppuccin, Rose Pine, Nord, Solarized, Neon Pink, Ocean Blue, Blood Red
 
-- **Drag titlebar** to move
-- **Drag edges/corners** to resize
-- **Double-click titlebar** to rename
+### Particle Effects (18)
+
+none, snow, fireflies, matrix, starfield, sakura, embers, bubbles, rain, lightning, smoke, confetti, stardust, hearts, leaves, ash, binary, galaxy
 
 ---
 
 ## Configuration
 
-Amadeus uses a TOML config file at `~/.amadeus/config.toml`. It's created automatically on first launch.
+Config file is at `~/.amadeus/config.toml` (created on first run).
 
 ```toml
 [general]
@@ -158,6 +157,7 @@ font = "Cascadia Code"
 font_size = 14
 cursor_style = "block"
 text_color = "#c0c0c0"
+border_radius = 8
 
 [profiles.default.background]
 color = "#1a1a2e"
@@ -165,43 +165,33 @@ color = "#1a1a2e"
 
 ---
 
-## Anime Themes
+## Troubleshooting
 
-Amadeus includes 21 anime themes with bundled background images:
+**`node-pty` errors during install?**
 
-| Theme | Particles |
-|---|---|
-| A Silent Voice | - |
-| Evangelion | - |
-| Steins;Gate | Scanlines |
-| Takopi | - |
-| Nisekoi | - |
-| Toradora | - |
-| Dragon Ball | - |
-| Death Note | - |
-| Attack on Titan | - |
-| One Piece | - |
-| Demon Slayer | - |
-| Fullmetal Alchemist | - |
-| Cowboy Bebop | - |
-| Spirited Away | - |
-| My Hero Academia | - |
-| Asuka | Stardust |
-| K-ON! | Confetti |
-| Quintessential Quintuplets | Binary |
-| Nisekoi Chitoge | Stardust |
-| Cyberpunk Edgerunners | Hearts |
-| Bunny Girl Senpai | Rain |
+You need C++ build tools. Run:
+```bash
+npm install --global windows-build-tools
+```
+Or install [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with "Desktop development with C++". Then retry `npm install && npx electron-rebuild`.
+
+**App opens but no text in terminal?**
+
+Run `npx electron-rebuild` - this rebuilds node-pty for your Electron version.
+
+**Terminals don't save?**
+
+Close the app with the X button, not by killing the process. Session saves on graceful close.
 
 ---
 
 ## Tech Stack
 
-- **Electron** - Desktop framework
-- **TypeScript** - Language
-- **xterm.js** - Terminal emulator
-- **node-pty** - PTY backend (runs in a child process)
-- **TOML** - Configuration format
+- [Electron](https://www.electronjs.org/) - Desktop framework
+- [TypeScript](https://www.typescriptlang.org/) - Language
+- [xterm.js](https://xtermjs.org/) - Terminal rendering
+- [node-pty](https://github.com/microsoft/node-pty) - PTY backend
+- [TOML](https://toml.io/) - Config format
 
 ---
 
